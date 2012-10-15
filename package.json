@@ -1,0 +1,22 @@
+{
+  "name": "enfield",
+  "description": "Jekyll-like blog engine for node.js",
+  "author": "Filipe Fortes <filipe@fortes.com>",
+  "version": "0.0.1",
+  "dependencies": {
+    "commander": "*",
+    "marked": "*",
+    "js-yaml": "*",
+    "uslug": "*",
+    "colors": "*",
+    "pygments": "*",
+    "highlight": "*",
+    "tinyliquid": "*",
+    "mkdirp": "*"
+  },
+  "devDependencies": {
+  },
+  "bin": {
+    "enfield": "./bin/enfield.js"
+  }
+}
