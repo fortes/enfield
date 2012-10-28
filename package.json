@@ -16,8 +16,14 @@
     "fs-extra": "*"
   },
   "devDependencies": {
+    "coffee-script": "*"
   },
   "bin": {
     "enfield": "./bin/enfield.js"
+  },
+  "preferGlobal": true,
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/fortes/enfield.git"
   }
 }
