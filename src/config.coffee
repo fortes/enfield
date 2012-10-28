@@ -8,7 +8,7 @@ DEFAULTS =
   server_port: 4000
 
   source: '.'
-  destination: '_site'
+  destination: './_site'
   plugins: '_plugins'
   layout: '_layouts'
 
@@ -20,7 +20,7 @@ DEFAULTS =
   include: ['.htaccess']
   paginate_path: 'page:num'
 
-  markdown_ext: 'markdown,mkd,mkdn,md'
+  # markdown_ext: 'markdown,mkd,mkdn,md'
   # textile_ext: 'textile'
 
   # maruku options
@@ -34,6 +34,7 @@ module.exports.getConfig = (configPath) ->
   config = {}
   config[key] = value for key, value of DEFAULTS
   if configPath and fs.existsSync configPath
+    console.log "Configuration from #{configPath}"
     str = fs.readFileSync(configPath).toString()
     config[key] = value for key, value of yaml.load str
 

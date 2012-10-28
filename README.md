@@ -2,9 +2,11 @@
 
 ## TODO
 
-* Add auto-regenerate mode
-* Add server mode
 * Base URL / real permalinks
+* Post index page for year directories
+* Plugin support
+* Process coffee / less?
+* Proper include support (nesting)
 
 ## This Project Has a Stupid Name
 

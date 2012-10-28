@@ -4,15 +4,16 @@
   "author": "Filipe Fortes <filipe@fortes.com>",
   "version": "0.0.1",
   "dependencies": {
-    "commander": "*",
+    "optimist": "*",
     "marked": "*",
     "js-yaml": "*",
     "uslug": "*",
     "colors": "*",
-    "pygments": "*",
     "highlight": "*",
     "tinyliquid": "*",
-    "mkdirp": "*"
+    "node-static": "*",
+    "watch": "*",
+    "fs-extra": "*"
   },
   "devDependencies": {
   },
