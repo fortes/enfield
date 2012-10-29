@@ -30,10 +30,8 @@ module.exports = {
 
 * Base URL / real permalinks
 * Post index page for year directories
-* Plugin support
 * Process coffee / less?
 * Proper include support (nesting)
-* Support Jekyll liquid extensions: https://github.com/mojombo/jekyll/wiki/Liquid-Extensions
 
 ## This Project Has a Stupid Name
 

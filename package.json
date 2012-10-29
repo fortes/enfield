@@ -14,7 +14,8 @@
     "node-static": "*",
     "watch": "*",
     "fs-extra": "*",
-    "coffee-script": "*"
+    "coffee-script": "*",
+    "moment": "*"
   },
   "devDependencies": {
   },

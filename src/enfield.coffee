@@ -106,6 +106,13 @@ begin = (options) ->
     highlight: (code, lang) ->
       highlight.Highlight code
 
+  # Copy default filters
+  options.filters = {}
+  options.filters[key] = tinyliquid.filters[key] for key of tinyliquid.filters
+
+  # Load bundled plugins
+  loadPlugins options, path.join __dirname, 'plugins'
+
   generate options
 
   if options.auto
@@ -154,24 +161,23 @@ generateDebounced = (options, callback) ->
 
 generate = (options, callback) ->
   checkDirectories options
-  { filters } = loadPlugins options
+  loadPlugins options
 
-  # Copy default filters plugs those from plugins
-  options.filters = {}
-  options.filters[key] = tinyliquid.filters[key] for key of tinyliquid.filters
-  options.filters[key] = filters[key] for key of filters
   { layouts, includes } = getLayoutsAndIncludes options
 
   posts = getPosts options
+  # Sort on date
+  posts.sort (a, b) ->
+    b.date - a.date
   # Create data
   siteData = {}
   # Add in variables from config
   siteData[key] = options[key] for key of options
   # Post collection
   siteData.posts = posts
-  tinyliquidOptions =
-    filters: options.filters
+  liquidOptions =
     files: includes
+    original: true
 
   # Write out posts
   for post in posts
@@ -179,10 +185,10 @@ generate = (options, callback) ->
     continue unless post.published
 
     # Template
-    post.content = tinyliquid.compile(post.raw_content, tinyliquidOptions) {
+    post.content = tinyliquid.compile(post.raw_content, liquidOptions) {
       site: siteData
       page: post
-    }
+    }, options.filters
 
     # Convert markdown, if appropriate
     # TODO: Other converters?
@@ -195,12 +201,11 @@ generate = (options, callback) ->
         content: post.content
         page: post
         site: siteData
-      }
+      }, options.filters
     else
       rendered = post.content
 
     outputPath = path.join options.destination, post.url, 'index.html'
-    console.log outputPath
     fs.mkdirsSync path.dirname outputPath
     fs.writeFileSync outputPath, rendered
 
@@ -239,10 +244,10 @@ generate = (options, callback) ->
         page.url = "/#{path.join path.dirname(filepath), basename}"
 
         # Content can contain liquid directives
-        content = tinyliquid.compile(content, tinyliquidOptions) {
+        content = tinyliquid.compile(content, liquidOptions) {
           site: siteData
           page: page
-        }
+        }, options.filters
 
         # TODO: Modular converters (think .coffee and .less)
         if ext is '.md'
@@ -254,7 +259,7 @@ generate = (options, callback) ->
             content: content
             site: siteData
             page: data
-          }
+          }, options.filters
         else
           rendered = content
 
@@ -281,10 +286,12 @@ checkDirectories = (options) ->
     fs.mkdirSync options.destination
 
 # Load plugins
-loadPlugins = (options) ->
-  filters = {}
+loadPlugins = (options, pluginDir) ->
+  unless pluginDir
+    pluginDir = path.resolve path.join options.source, '_plugins'
 
-  pluginDir = path.resolve path.join options.source, '_plugins'
+  return unless fs.existsSync pluginDir
+
   for file in fs.readdirSync pluginDir
     filepath = path.join pluginDir, file
     if fs.statSync(filepath).isDirectory()
@@ -296,9 +303,9 @@ loadPlugins = (options) ->
       # Load file
       plugin = require filepath
       if plugin.filters
-        filters[key] = plugin.filters[key] for key of plugin.filters
+        options.filters[key] = plugin.filters[key] for key of plugin.filters
 
-  { filters }
+  return
 
 # Compile all layouts and return
 getLayoutsAndIncludes = (options) ->
@@ -315,16 +322,15 @@ getLayoutsAndIncludes = (options) ->
 
   fileData = {}
   fileContents = {}
-  layouts = {}
   for file in fs.readdirSync layoutDir
     name = path.basename file, path.extname file
     { data, content } = getDataAndContent path.join(layoutDir, file)
     fileData[name] = data
     fileContents[name] = content
 
-  tinyliquidOptions =
-    filters: tinyliquid.filters
+  liquidOptions =
     files: includes
+    original: true
 
   # Helper for moving up dependency chain of layouts
   layoutContents = {}
@@ -333,16 +339,14 @@ getLayoutsAndIncludes = (options) ->
       if layout = fileData[name]?.layout
         layout = load layout, fileContents[layout]
         content = layout.replace /\{\{\s*content\s*\}\}/, content
-        console.log content
 
       layoutContents[name] = content
 
     layoutContents[name]
 
-  # TODO: What about multiple dependencies here?
-  # - Should data inherit?
+  layouts = {}
   for name, content of fileContents
-    layouts[name] = tinyliquid.compile load(name, content), tinyliquidOptions
+    layouts[name] = tinyliquid.compile load(name, content), liquidOptions
 
   { layouts, includes }
 
