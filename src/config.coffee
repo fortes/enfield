@@ -18,6 +18,7 @@ DEFAULTS =
   #markdown: 'maruku'
   #permalink: ':year/:title'
   include: ['.htaccess']
+  exclude: ['README.md']
   #paginate_path: 'page:num'
 
   # markdown_ext: 'markdown,mkd,mkdn,md'

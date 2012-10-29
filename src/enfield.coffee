@@ -222,13 +222,18 @@ generate = (options, callback) ->
     fs.mkdirsSync path.dirname outputPath
     fs.writeFileSync outputPath, rendered
 
-  # Walk through other directories in the root
-  files = [options.source]
   isHidden = (filepath) ->
     basename = path.basename filepath
-    filepath isnt options.source and
-      (basename[0] is '_' or basename[0] is '.')
+    if basename in options.exclude
+      true
+    else if basename in options.include
+      false
+    else
+      filepath isnt options.source and
+        (basename[0] is '_' or basename[0] is '.')
 
+  # Walk through other directories in the root
+  files = [options.source]
   while filepath = files.pop()
     # Folder
     if fs.statSync(filepath).isDirectory()
