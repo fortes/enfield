@@ -1,5 +1,7 @@
 # Enfield
 
+Jekyll-like static site generator for node.js.
+
 ## Plugins
 
 Enfield will load any `.coffee` or `.js` file from the `_plugins` directory. The plugin system is modeled after [Jekyll Plugins](https://github.com/mojombo/jekyll/wiki/Plugins). However, only a few plugin types are supported:
@@ -8,6 +10,29 @@ Enfield will load any `.coffee` or `.js` file from the `_plugins` directory. The
 * Liquid Filters
 
 ### Converters
+
+Custom converters can be added. Note that only items with YAML frontmatter will be converted. All others are ignored.
+
+```js
+module.exports = {
+  "converters": {
+    "foo": {
+      "priority": 1,
+      "matches": function(ext) {
+        return ext === '.foo';
+      },
+      "outputExtension": function(ext) {
+        return ".html";
+      },
+      "convert": function(content) {
+        return content.replace('foo', '');
+      }
+    }
+  }
+}
+```
+
+Valid priority values: 1 (lowest) - 5 (highest)
 
 ### Liquid Filters
 
@@ -28,6 +53,7 @@ module.exports = {
 
 ## TODO
 
+* Handle tags and categories
 * Base URL / real permalinks
 * Post index page for year directories
 * Process coffee / less?

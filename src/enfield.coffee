@@ -5,8 +5,6 @@ uslug = require 'uslug'
 tinyliquid = require 'tinyliquid'
 colors = require 'colors'
 yaml = require 'js-yaml'
-marked = require 'marked'
-highlight = require 'highlight'
 node_static = require 'node-static'
 watch = require 'watch'
 http = require 'http'
@@ -99,19 +97,21 @@ Usage:
 
 # Workhorse function
 begin = (options) ->
-  # Initialize markdown
-  marked.setOptions
-    gfm: true
-    sanitize: true
-    highlight: (code, lang) ->
-      highlight.Highlight code
-
   # Copy default filters
   options.filters = {}
   options.filters[key] = tinyliquid.filters[key] for key of tinyliquid.filters
 
+  options.converters = []
+
   # Load bundled plugins
   loadPlugins options, path.join __dirname, 'plugins'
+  checkDirectories options
+  # Load directory plugins
+  loadPlugins options
+
+  # Sort converters based on priority
+  options.converters.sort (a, b) ->
+    b.priority - a.priority
 
   generate options
 
@@ -160,10 +160,9 @@ generateDebounced = (options, callback) ->
   return
 
 generate = (options, callback) ->
-  checkDirectories options
-  loadPlugins options
-
   { layouts, includes } = getLayoutsAndIncludes options
+
+  console.log "Building site: #{options.source} -> #{options.destination}"
 
   posts = getPosts options
   # Sort on date
@@ -185,15 +184,14 @@ generate = (options, callback) ->
     continue unless post.published
 
     # Template
-    post.content = tinyliquid.compile(post.raw_content, liquidOptions) {
+    content = tinyliquid.compile(post.raw_content, liquidOptions) {
       site: siteData
       page: post
     }, options.filters
 
-    # Convert markdown, if appropriate
-    # TODO: Other converters?
-    if post.extension is '.md'
-      post.content = marked post.content
+    # Run conversion
+    { ext, content } = convertContent post.ext, content, options.converters
+    post.content = content
 
     if post.layout
       template = layouts[post.layout]
@@ -205,7 +203,12 @@ generate = (options, callback) ->
     else
       rendered = post.content
 
-    outputPath = path.join options.destination, post.url, 'index.html'
+    if ext is '.html'
+      outputPath = path.join options.destination, post.url, 'index.html'
+    else
+      post.url += ext
+      outputPath = path.join options.destination, post.url
+
     fs.mkdirsSync path.dirname outputPath
     fs.writeFileSync outputPath, rendered
 
@@ -238,10 +241,13 @@ generate = (options, callback) ->
         page = {}
         page[key] = data[key] for key of data
 
-        basename = path.basename filepath, path.extname filepath
+        basename = path.basename filepath, ext
         if basename is 'index' and (ext is '.md' or ext is '.html')
           basename = ''
         page.url = "/#{path.join path.dirname(filepath), basename}"
+
+        if page.tags and typeof page.tags is 'string'
+          page.tags = page.tags.split ' '
 
         # Content can contain liquid directives
         content = tinyliquid.compile(content, liquidOptions) {
@@ -249,9 +255,9 @@ generate = (options, callback) ->
           page: page
         }, options.filters
 
-        # TODO: Modular converters (think .coffee and .less)
-        if ext is '.md'
-          content = marked content
+        # Run conversion
+        { ext, content } = convertContent ext, content, options.converters
+        page.content = content
 
         if page.layout and page.layout of layouts
           template = layouts[page.layout]
@@ -263,13 +269,20 @@ generate = (options, callback) ->
         else
           rendered = content
 
-        outPath = path.join options.destination, page.url, 'index.html'
-        fs.mkdirsSync path.dirname outPath
-        fs.writeFileSync outPath, rendered
+        if ext is '.html'
+          outputPath = path.join options.destination, page.url, 'index.html'
+        else
+          page.url += ext
+          outputPath = path.join options.destination, page.url
+
+        fs.mkdirsSync path.dirname outputPath
+        fs.writeFileSync outputPath, rendered
       else
         # Straight copy
         fs.copy filepath, path.join options.destination, filepath
 
+  console.log "Successfully generated site: ".green +
+    "#{path.resolve options.source} -> #{options.destination}".green
   callback() if callback
 
 # Make sure the directories needed are there
@@ -298,12 +311,15 @@ loadPlugins = (options, pluginDir) ->
       # Ignore directories for now
       continue
 
-    extension = path.extname file
-    if extension is '.js' or extension is '.coffee'
+    ext = path.extname file
+    if ext is '.js' or ext is '.coffee'
       # Load file
       plugin = require filepath
       if plugin.filters
         options.filters[key] = plugin.filters[key] for key of plugin.filters
+      if plugin.converters
+        for key of plugin.converters
+          options.converters.push(plugin.converters[key])
 
   return
 
@@ -365,9 +381,11 @@ getPosts = (options) ->
       post.date = new Date match[1], match[2] - 1, match[3]
       post.slug = match[4]
       post.published = if 'published' of data then data.published else true
-      post.url = "/#{post.date.getFullYear()}/#{post.slug}"
+      post.id = post.url = "/#{post.date.getFullYear()}/#{post.slug}"
       post.raw_content = content
-      post.extension = ext
+      post.ext = ext
+      if post.tags and typeof post.tags is 'string'
+        post.tags = post.tags.split ' '
       # TODO: Tags & Categories
 
       posts.push post
@@ -390,6 +408,17 @@ getDataAndContent = (filepath) ->
   data: data
   content: lines.join "\n"
   ext: path.extname filepath
+
+convertContent = (ext, content, converters) ->
+  for converter in converters
+    if converter.matches ext
+      return {
+        ext: converter.outputExtension ext
+        content: converter.convert content
+      }
+
+  # None found, leave unmodified
+  return { ext, content }
 
 # Creates all the default directories
 createDirectoryStructure = (dir) ->

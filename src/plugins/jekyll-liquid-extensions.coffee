@@ -4,11 +4,10 @@ querystring = require 'querystring'
 
 module.exports =
   filters:
-    date_to_xml_schema: (str) ->
+    date_to_xmlschema: (str) ->
       date = moment str
       if date.isValid()
-        date.format "ddd MMM DD HH:mm:ss ZZ YYYY"
-        # date.format "YYYY-MM-DDTHH:mm:ssZZ"
+        date.format()
       else
         str
     date_to_string: (str) ->
@@ -24,10 +23,10 @@ module.exports =
       else
         str
     xml_escape: (str) ->
-      str.replace("&", "&amp;")
-        .replace("<", "&lt;")
-        .replace(">", "&gt;")
-        .replace('"', "&quot;")
+      str.replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
     cgi_escape: (str) ->
       querystring.escape str
     uri_escape: (str) ->
@@ -35,7 +34,7 @@ module.exports =
     number_of_words: (str) ->
       str?.split(' ').length
     array_to_sentence_string: (array, connector="and") ->
-      return unless array
+      return '' unless array
       len = array.length
       switch len
         when 0
@@ -46,6 +45,5 @@ module.exports =
           "#{array[0]} #{connector} #{array[1]}"
         else
           "#{array.slice(0, len-1).join ', '}, #{connector} #{array[len - 1]}"
-
     # textilize
     # markdownify
