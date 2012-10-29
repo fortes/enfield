@@ -13,12 +13,12 @@ DEFAULTS =
   layout: '_layouts'
 
   future: true
-  lsi: false
-  pygments: false
-  # markdown: 'maruku'
-  permalink: 'date'
+  #lsi: false
+  #pygments: false
+  #markdown: 'maruku'
+  #permalink: ':year/:title'
   include: ['.htaccess']
-  paginate_path: 'page:num'
+  #paginate_path: 'page:num'
 
   # markdown_ext: 'markdown,mkd,mkdn,md'
   # textile_ext: 'textile'

@@ -76,7 +76,8 @@ module.exports = {
 ## TODO
 
 * Support some form of post pagination
-* Base URL / real permalinks
+* site_url option
+* Consider configurable permalinks
 * Post index page for year directories
 * Proper include support (nesting)
 * Process coffee / less?

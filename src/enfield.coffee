@@ -178,14 +178,11 @@ generate = (options, callback) ->
   for type in ['tags', 'categories']
     siteData[type] = {}
     for post in posts
+      continue unless options.future or post.published
       if post[type]
         for val in post[type]
           siteData[type][val] or= { name: val, posts: [] }
           siteData[type][val].posts.push post
-
-    for key, val of siteData[type]
-      val.posts.sort (a,b) ->
-        b.date - a.date
 
   liquidOptions =
     files: includes
@@ -194,7 +191,7 @@ generate = (options, callback) ->
   # Write out posts
   for post in posts
     # Respect published flag
-    continue unless post.published
+    continue unless options.future or post.published
 
     # Template
     content = tinyliquid.compile(post.raw_content, liquidOptions) {
@@ -396,6 +393,9 @@ getPosts = (options) ->
       post.ext = ext
       if post.tags and typeof post.tags is 'string'
         post.tags = post.tags.split ' '
+      # Alias
+      if post.category and not post.categories
+        post.categories = post.category
       if post.categories and typeof post.categories is 'string'
         post.categories = post.categories.split ' '
 
