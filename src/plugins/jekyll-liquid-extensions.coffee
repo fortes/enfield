@@ -34,9 +34,9 @@ module.exports =
       encodeURIComponent str
     number_of_words: (str) ->
       str?.split(' ').length
-    array_to_sentence_string: (array) ->
+    array_to_sentence_string: (array, connector="and") ->
+      return unless array
       len = array.length
-      connector = "and"
       switch len
         when 0
           ''
@@ -45,7 +45,7 @@ module.exports =
         when 2
           "#{array[0]} #{connector} #{array[1]}"
         else
-          "#{array.substr(0, len-2).join ', '}, #{connector} #{array[len - 1]}"
+          "#{array.slice(0, len-1).join ', '}, #{connector} #{array[len - 1]}"
 
     # textilize
     # markdownify
