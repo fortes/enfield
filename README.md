@@ -2,6 +2,28 @@
 
 Jekyll-like static site generator for node.js.
 
+## Usage
+
+Generated directly from `enfield --help`
+
+```
+Enfield is a static-site generator modeled after Jekyll
+
+Usage:
+  enfield                          # Generate . -> ./_site
+  enfield [destination]            # Generate . -> <path>
+  enfield [source] [destination]   # Generate <path> -> <path>
+
+  enfield init [directory]         # Build default directory structure
+  enfield page [title]             # Create a new post with today's date
+  enfield post [title]             # Create a new page
+
+Options:
+  --auto           Auto-regenerate
+  --server [PORT]  Start a web server (default port 4000)
+  --url [URL]      Set custom site.url
+```
+
 ## Plugins
 
 Enfield will load any `.coffee` or `.js` file from the `_plugins` directory. The plugin system is modeled after [Jekyll Plugins](https://github.com/mojombo/jekyll/wiki/Plugins). However, only a few plugin types are supported:
