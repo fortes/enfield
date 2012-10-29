@@ -53,12 +53,12 @@ module.exports = {
 
 ## TODO
 
-* Handle tags and categories
+* Support some form of post pagination
 * Base URL / real permalinks
 * Post index page for year directories
-* Process coffee / less?
 * Proper include support (nesting)
+* Process coffee / less?
 
 ## This Project Has a Stupid Name
 
-richard Enfield is a minor character in [The Strange Case of Dr. Jekyll and Mr. Hyde](http://en.wikipedia.org/wiki/Strange_Case_of_Dr_Jekyll_and_Mr_Hyde).
+Richard Enfield is a minor character in [The Strange Case of Dr. Jekyll and Mr. Hyde](http://en.wikipedia.org/wiki/Strange_Case_of_Dr_Jekyll_and_Mr_Hyde).

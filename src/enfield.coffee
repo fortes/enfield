@@ -174,6 +174,19 @@ generate = (options, callback) ->
   siteData[key] = options[key] for key of options
   # Post collection
   siteData.posts = posts
+  siteData.time = Date.now()
+  for type in ['tags', 'categories']
+    siteData[type] = {}
+    for post in posts
+      if post[type]
+        for val in post[type]
+          siteData[type][val] or= { name: val, posts: [] }
+          siteData[type][val].posts.push post
+
+    for key, val of siteData[type]
+      val.posts.sort (a,b) ->
+        b.date - a.date
+
   liquidOptions =
     files: includes
     original: true
@@ -245,9 +258,6 @@ generate = (options, callback) ->
         if basename is 'index' and (ext is '.md' or ext is '.html')
           basename = ''
         page.url = "/#{path.join path.dirname(filepath), basename}"
-
-        if page.tags and typeof page.tags is 'string'
-          page.tags = page.tags.split ' '
 
         # Content can contain liquid directives
         content = tinyliquid.compile(content, liquidOptions) {
@@ -386,7 +396,8 @@ getPosts = (options) ->
       post.ext = ext
       if post.tags and typeof post.tags is 'string'
         post.tags = post.tags.split ' '
-      # TODO: Tags & Categories
+      if post.categories and typeof post.categories is 'string'
+        post.categories = post.categories.split ' '
 
       posts.push post
     else
