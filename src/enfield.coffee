@@ -154,7 +154,14 @@ generateDebounced = (options, callback) ->
 
 generate = (options, callback) ->
   checkDirectories options
+  { filters } = loadPlugins options
+
+  # Copy default filters plugs those from plugins
+  options.filters = {}
+  options.filters[key] = tinyliquid.filters[key] for key of tinyliquid.filters
+  options.filters[key] = filters[key] for key of filters
   { layouts, includes } = getLayoutsAndIncludes options
+
   posts = getPosts options
   # Create data
   siteData = {}
@@ -163,7 +170,7 @@ generate = (options, callback) ->
   # Post collection
   siteData.posts = posts
   tinyliquidOptions =
-    filters: tinyliquid.filters
+    filters: options.filters
     files: includes
 
   # Write out posts
@@ -272,6 +279,26 @@ checkDirectories = (options) ->
       process.exit -1
   else
     fs.mkdirSync options.destination
+
+# Load plugins
+loadPlugins = (options) ->
+  filters = {}
+
+  pluginDir = path.resolve path.join options.source, '_plugins'
+  for file in fs.readdirSync pluginDir
+    filepath = path.join pluginDir, file
+    if fs.statSync(filepath).isDirectory()
+      # Ignore directories for now
+      continue
+
+    extension = path.extname file
+    if extension is '.js' or extension is '.coffee'
+      # Load file
+      plugin = require filepath
+      if plugin.filters
+        filters[key] = plugin.filters[key] for key of plugin.filters
+
+  { filters }
 
 # Compile all layouts and return
 getLayoutsAndIncludes = (options) ->

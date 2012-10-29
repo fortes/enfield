@@ -13,13 +13,13 @@
     "tinyliquid": "*",
     "node-static": "*",
     "watch": "*",
-    "fs-extra": "*"
-  },
-  "devDependencies": {
+    "fs-extra": "*",
     "coffee-script": "*"
   },
+  "devDependencies": {
+  },
   "bin": {
-    "enfield": "./bin/enfield.js"
+    "enfield": "./bin/enfield.coffee"
   },
   "preferGlobal": true,
   "repository": {
