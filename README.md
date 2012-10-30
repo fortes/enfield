@@ -75,6 +75,7 @@ module.exports = {
 
 ## TODO
 
+* Check for permalink collisions due to same slug and different dates
 * Support some form of post pagination
 * site_url option
 * Consider configurable permalinks

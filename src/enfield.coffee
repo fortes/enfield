@@ -383,7 +383,9 @@ postMask = /^(\d{4})-(\d{2})-(\d{2})-(.+)\.(md|html)$/
 getPosts = (options) ->
   posts = []
   postDir = path.join options.source, '_posts'
+  permalinks = {}
   for filename in fs.readdirSync postDir
+    console.log filename
     if match = filename.match postMask
       { data, content, ext } = getDataAndContent path.join postDir, filename
 
@@ -394,6 +396,9 @@ getPosts = (options) ->
       post.slug = match[4]
       post.published = if 'published' of data then data.published else true
       post.id = post.url = "/#{post.date.getFullYear()}/#{post.slug}"
+      if post.url of permalinks
+        console.error "Repeated permalink #{post.url}".red
+      permalinks[post.url] = true
       post.raw_content = content
       post.ext = ext
       if post.tags and typeof post.tags is 'string'
@@ -477,6 +482,7 @@ createPost = (postTitle) ->
   year = now.getFullYear()
   month = pad now.getMonth() + 1
   day = pad now.getDate()
+  # TODO: Check if slug exists for given year already and add -2?
   slug = uslug postTitle
   postPath = "_posts/#{year}-#{month}-#{day}-#{slug}.md"
   createEntry postTitle, postPath
