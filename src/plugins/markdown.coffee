@@ -4,7 +4,6 @@ highlight = require 'highlight'
 # Initialize markdown
 marked.setOptions
   gfm: true
-  sanitize: true
   highlight: (code, lang) ->
     highlight.Highlight code
 
