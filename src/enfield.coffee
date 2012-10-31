@@ -421,9 +421,12 @@ getDataAndContent = (filepath) ->
   if lines[0] is "---"
     lines.shift()
     frontMatter = []
-    while (currentLine = lines.shift())
+
+    while (lines.length)
+      currentLine = lines.shift()
       break if currentLine is '---'
       frontMatter.push currentLine
+
     data = yaml.load frontMatter.join "\n"
 
   data: data
