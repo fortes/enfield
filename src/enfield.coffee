@@ -119,11 +119,13 @@ begin = (options) ->
     console.log "Auto-regenerating enabled".green +
       " #{options.source} -> #{options.destination}".green
     # Avoid infinite refreshing from watching the output directory
+    realDestination = path.resolve options.destination
     fileFilter = (f) ->
-      f isnt options.destination
+      path.resolve(f) is realDestination
     watch.watchTree options.source, { filter: fileFilter }, (f, curr, prev) ->
       if typeof f is 'object' and curr is null and prev is null
         # Finished walking tree, ignore
+        return
       else if prev is null
         # New file
         generateDebounced options, ->
