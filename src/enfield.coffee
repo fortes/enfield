@@ -387,9 +387,14 @@ getPosts = (options) ->
   postDir = path.join options.source, '_posts'
   permalinks = {}
   for filename in fs.readdirSync postDir
-    console.log filename
     if match = filename.match postMask
-      { data, content, ext } = getDataAndContent path.join postDir, filename
+      try
+        { data, content, ext } = getDataAndContent path.join postDir, filename
+      catch err
+        console.error "Error while trying to read #{filename}:".red
+        console.error err.toString()
+        console.error "Skipping post #{filename}".yellow
+        continue
 
       post = {}
       post[key] = data[key] for key of data
