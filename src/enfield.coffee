@@ -190,8 +190,18 @@ generate = (options, callback) ->
     files: includes
     original: true
 
-  # Write out posts
+  # Set next / prev on posts
+  prev = null
   for post in posts
+    # List is in reverse-chronological order, so the last post we processed is
+    # actually the next post
+    if prev
+      post.next = prev
+      prev.prev = post
+    prev = post
+
+  # Write out posts
+  for post, i in posts
     # Respect published flag
     continue unless options.future or post.published
 
