@@ -8,8 +8,9 @@ yaml = require 'js-yaml'
 node_static = require 'node-static'
 watch = require 'watch'
 http = require 'http'
+async = require 'async'
 
-config = require './config'
+configReader = require './config'
 
 CONFIG_FILENAME = '_config.yml'
 
@@ -80,252 +81,188 @@ Usage:
           destination = remainderArgs[1]
 
         # Load configuration
-        options = config.getConfig(path.join source, CONFIG_FILENAME)
+        config = configReader.getConfig(path.join source, CONFIG_FILENAME)
         # Override config with passed variables
         if destination
-          options.destination = destination
+          config.destination = destination
         if args.server
-          options.server = true
+          config.server = true
         if args.server and args.server isnt true
-          options.server_port = args.server
+          config.server_port = args.server
         # Server activates auto
-        if args.auto or options.server
-          options.auto = true
+        if args.auto or config.server
+          config.auto = true
         # TODO: args.url
 
-        begin options
+        begin config
 
 # Workhorse function
-begin = (options) ->
+begin = (config) ->
   # Copy default filters
-  options.filters = {}
-  options.filters[key] = tinyliquid.filters[key] for key of tinyliquid.filters
+  config.filters = {}
+  config.filters[key] = tinyliquid.filters[key] for key of tinyliquid.filters
 
-  options.converters = []
+  config.converters = []
+  config.generators = []
 
   # Load bundled plugins
-  loadPlugins options, path.join __dirname, 'plugins'
-  checkDirectories options
+  loadPlugins config, path.join __dirname, 'plugins'
+  checkDirectories config
   # Load directory plugins
-  loadPlugins options
+  loadPlugins config
 
   # Sort converters based on priority
-  options.converters.sort (a, b) ->
+  config.converters.sort (a, b) ->
     b.priority - a.priority
 
-  generate options
+  generate config
 
-  if options.auto
+  if config.auto
     console.log "Auto-regenerating enabled".green +
-      " #{options.source} -> #{options.destination}".green
+      " #{config.source} -> #{config.destination}".green
     # Avoid infinite refreshing from watching the output directory
-    realDestination = path.resolve options.destination
+    realDestination = path.resolve config.destination
     fileFilter = (f) ->
       path.resolve(f) is realDestination
-    watch.watchTree options.source, { filter: fileFilter }, (f, curr, prev) ->
+    watch.watchTree config.source, { filter: fileFilter }, (f, curr, prev) ->
       if typeof f is 'object' and curr is null and prev is null
         # Finished walking tree, ignore
         return
       else if prev is null
         # New file
-        generateDebounced options, ->
+        generateDebounced config, ->
           console.log 'Updated due to new file'
       else if curr.nlink is 0
         # Removed file
-        generateDebounced options, ->
+        generateDebounced config, ->
           console.log 'Updated due to removed file'
       else
         # File was changed
-        generateDebounced options, ->
+        generateDebounced config, ->
           console.log 'Updated due to changed file'
 
     # TODO: Run server
-    if options.server
-      fileServer = new(node_static.Server)(options.destination)
+    if config.server
+      fileServer = new(node_static.Server)(config.destination)
       server = http.createServer (request, response) ->
         request.addListener 'end', ->
           fileServer.serve request, response
-      server.listen options.server_port
-      console.log "Running server at http://localhost:#{options.server_port}"
+      server.listen config.server_port
+      console.log "Running server at http://localhost:#{config.server_port}"
 
 lastGenerated = 0
 generateTimeoutId = 0
 wait = (timeout, f) ->
   setTimeout f, timeout
-generateDebounced = (options, callback) ->
+generateDebounced = (config, callback) ->
   now = Date.now()
   clearTimeout generateTimeoutId
   generateTimeoutId = wait 100, ->
-    generate options, ->
+    generate config, ->
       lastGenerated = Date.now()
       callback()
   return
 
-generate = (options, callback) ->
-  { layouts, includes } = getLayoutsAndIncludes options
+generate = (config, callback) ->
+  { layouts, includes } = getLayoutsAndIncludes config
 
-  console.log "Building site: #{options.source} -> #{options.destination}"
+  console.log "Building site: #{config.source} -> #{config.destination}"
 
-  posts = getPosts options
-  # Sort on date
-  posts.sort (a, b) ->
-    b.date - a.date
-  # Create data
-  siteData = {}
-  # Add in variables from config
-  siteData[key] = options[key] for key of options
-  # Post collection
-  siteData.posts = posts
-  siteData.time = Date.now()
+  posts = getPosts config
+  {pages, staticFiles} = getPagesAndStaticFiles config
+
+  # Create site data structure
+  siteData =
+    config: config
+    time: Date.now()
+    posts: posts
+    pages: pages
+
+  # Setup tags & categories for posts
   for type in ['tags', 'categories']
     siteData[type] = {}
     for post in posts
-      continue unless options.future or post.published
+      continue unless config.future or post.published
       if post[type]
         for val in post[type]
           siteData[type][val] or= { name: val, posts: [] }
           siteData[type][val].posts.push post
 
+  # TODO: Run generators
+
   liquidOptions =
     files: includes
     original: true
 
-  # Set next / prev on posts
-  prev = null
-  for post in posts
-    # List is in reverse-chronological order, so the last post we processed is
-    # actually the next post
-    if prev
-      post.next = prev
-      prev.prev = post
-    prev = post
-
-  # Write out posts
-  for post, i in posts
+  # Write out pages and posts
+  for page in posts.concat pages
     # Respect published flag
-    continue unless options.future or post.published
+    continue unless config.future or page.published
 
-    # Template
-    content = tinyliquid.compile(post.raw_content, liquidOptions) {
+    # Content can contain liquid directives, process now
+    content = tinyliquid.compile(page.raw_content, liquidOptions) {
       site: siteData
-      page: post
-    }, options.filters
+      page: page
+    }, config.filters
 
     # Run conversion
-    { ext, content } = convertContent post.ext, content, options.converters
-    post.content = content
+    {ext, content} = convertContent page.ext, content, config.converters
+    page.content = content
 
-    if post.layout
-      template = layouts[post.layout]
+    # Apply layout, if it exists
+    if page.layout and page.layout of layouts
+      template = layouts[page.layout]
       rendered = template {
-        content: post.content
-        page: post
+        content: content
         site: siteData
-      }, options.filters
+        page: page
+      }, config.filters
     else
-      rendered = post.content
+      rendered = content
 
     if ext is '.html'
-      outputPath = path.join options.destination, post.url, 'index.html'
+      outputPath = path.join config.destination, page.url, 'index.html'
     else
-      post.url += ext
-      outputPath = path.join options.destination, post.url
+      page.url += ext
+      outputPath = path.join config.destination, page.url
 
+    # Write file
     fs.mkdirsSync path.dirname outputPath
     fs.writeFileSync outputPath, rendered
 
-  isHidden = (filepath) ->
-    basename = path.basename filepath
-    if basename in options.exclude
-      true
-    else if basename in options.include
-      false
-    else
-      filepath isnt options.source and
-        (basename[0] is '_' or basename[0] is '.')
-
-  # Walk through other directories in the root
-  files = [options.source]
-  while filepath = files.pop()
-    # Folder
-    if fs.statSync(filepath).isDirectory()
-      # Skip special folders
-      continue if isHidden filepath
-
-      # Create directory in destination
-      fs.mkdirsSync path.join options.destination, filepath
-
-      for filename in fs.readdirSync filepath
-        # Skip hidden files
-        childPath = path.join filepath, filename
-        continue if isHidden childPath
-        files.push childPath
-    else
-      { data, content, ext } = getDataAndContent filepath
-
-      if data
-        # Process
-        page = {}
-        page[key] = data[key] for key of data
-
-        basename = path.basename filepath, ext
-        if basename is 'index' and (ext is '.md' or ext is '.html')
-          basename = ''
-        page.url = "/#{path.join path.dirname(filepath), basename}"
-
-        # Content can contain liquid directives
-        content = tinyliquid.compile(content, liquidOptions) {
-          site: siteData
-          page: page
-        }, options.filters
-
-        # Run conversion
-        { ext, content } = convertContent ext, content, options.converters
-        page.content = content
-
-        if page.layout and page.layout of layouts
-          template = layouts[page.layout]
-          rendered = template {
-            content: content
-            site: siteData
-            page: data
-          }, options.filters
-        else
-          rendered = content
-
-        if ext is '.html'
-          outputPath = path.join options.destination, page.url, 'index.html'
-        else
-          page.url += ext
-          outputPath = path.join options.destination, page.url
-
-        fs.mkdirsSync path.dirname outputPath
-        fs.writeFileSync outputPath, rendered
-      else
-        # Straight copy
-        fs.copy filepath, path.join options.destination, filepath
+  # Copy static files without overwhelming the file system
+  async.forEachLimit(
+    staticFiles
+    5
+    (filepath, callback) ->
+      # Make sure directory exists before copying
+      outPath = path.join(config.destination, filepath)
+      fs.mkdirsSync path.dirname(outPath)
+      fs.copy filepath, outPath, callback
+    (err) -> if err then throw err
+  )
 
   console.log "Successfully generated site: ".green +
-    "#{path.resolve options.source} -> #{options.destination}".green
+    "#{path.resolve config.source} -> #{config.destination}".green
   callback() if callback
 
 # Make sure the directories needed are there
-checkDirectories = (options) ->
-  unless fs.existsSync options.source
-    console.error "Source directory does not exist: #{options.source}".red
+checkDirectories = (config) ->
+  unless fs.existsSync config.source
+    console.error "Source directory does not exist: #{config.source}".red
     process.exit -1
 
-  if fs.existsSync options.destination
-    unless fs.lstatSync(options.destination).isDirectory()
-      console.error "Destination is not a directory: #{options.destination}".red
+  if fs.existsSync config.destination
+    unless fs.lstatSync(config.destination).isDirectory()
+      console.error "Destination is not a directory: #{config.destination}".red
       process.exit -1
   else
-    fs.mkdirSync options.destination
+    fs.mkdirSync config.destination
 
 # Load plugins
-loadPlugins = (options, pluginDir) ->
+loadPlugins = (config, pluginDir) ->
   unless pluginDir
-    pluginDir = path.resolve path.join options.source, '_plugins'
+    pluginDir = path.resolve path.join config.source, '_plugins'
 
   return unless fs.existsSync pluginDir
 
@@ -340,17 +277,21 @@ loadPlugins = (options, pluginDir) ->
       # Load file
       plugin = require filepath
       if plugin.filters
-        options.filters[key] = plugin.filters[key] for key of plugin.filters
+        for key, filter of plugin.filters
+          config.filters[key] = filter
       if plugin.converters
-        for key of plugin.converters
-          options.converters.push(plugin.converters[key])
+        for key, converter of plugin.converters
+          config.converters.push converter
+      if plugin.generators
+        for key, generator of plugin.generators
+          config.generators.push generator
 
   return
 
 # Compile all layouts and return
-getLayoutsAndIncludes = (options) ->
-  layoutDir = path.join options.source, options.layout
-  includesDir = path.join options.source, '_includes'
+getLayoutsAndIncludes = (config) ->
+  layoutDir = path.join config.source, config.layout
+  includesDir = path.join config.source, '_includes'
 
   includes = {}
   if fs.existsSync includesDir
@@ -392,21 +333,21 @@ getLayoutsAndIncludes = (options) ->
 
 # Get all posts
 postMask = /^(\d{4})-(\d{2})-(\d{2})-(.+)\.(md|html)$/
-getPosts = (options) ->
+getPosts = (config) ->
   posts = []
-  postDir = path.join options.source, '_posts'
+  postDir = path.join config.source, '_posts'
   permalinks = {}
   for filename in fs.readdirSync postDir
     if match = filename.match postMask
       try
-        { data, content, ext } = getDataAndContent path.join postDir, filename
+        {data, content, ext} = getDataAndContent path.join postDir, filename
       catch err
         console.error "Error while trying to read #{filename}:".red
         console.error err.toString()
         console.error "Skipping post #{filename}".yellow
         continue
 
-      post = {}
+      post = { raw_content: content, ext }
       post[key] = data[key] for key of data
 
       post.date = new Date match[1], match[2] - 1, match[3]
@@ -416,7 +357,6 @@ getPosts = (options) ->
       if post.url of permalinks
         console.error "Repeated permalink #{post.url}".red
       permalinks[post.url] = true
-      post.raw_content = content
       post.ext = ext
       if post.tags and typeof post.tags is 'string'
         post.tags = post.tags.split ' '
@@ -430,7 +370,57 @@ getPosts = (options) ->
     else
       # Doesn't match post mask, ignore
 
+  # Sort on date
+  posts.sort (a, b) ->
+    b.date - a.date
+
+  # Set next / prev on posts
+  prev = null
+  for post in posts
+    # List is in reverse-chronological order, so the previous post in the loop
+    # is actually the next post
+    if prev
+      post.next = prev
+      prev.prev = post
+    prev = post
+
   posts
+
+getPagesAndStaticFiles = (config) ->
+  pages = []
+  staticFiles = []
+
+  # Walk through all directories looking for files
+  files = [config.source]
+  while filepath = files.pop()
+    # Folder?
+    if fs.statSync(filepath).isDirectory()
+      # Skip special folders
+      continue if isHidden filepath, config
+
+      for filename in fs.readdirSync filepath
+        # Skip hidden files
+        childPath = path.join filepath, filename
+        continue if isHidden childPath, config
+        files.push childPath
+    else
+      {data, content, ext} = getDataAndContent filepath
+
+      if data
+        page = { raw_content: content, ext }
+        page[key] = data[key] for key of data
+
+        basename = path.basename filepath, ext
+        if basename is 'index' and (ext is '.md' or ext is '.html')
+          basename = ''
+        page.url = "/#{path.join path.dirname(filepath), basename}"
+
+        # Add to collection
+        pages.push page
+      else
+        staticFiles.push filepath
+
+  { pages, staticFiles }
 
 # Get the frontmatter plus content of a file
 getDataAndContent = (filepath) ->
@@ -460,6 +450,17 @@ convertContent = (ext, content, converters) ->
 
   # None found, leave unmodified
   return { ext, content }
+
+# Whether the file should be ignored by the system
+isHidden = (filepath, config) ->
+  basename = path.basename filepath
+  if basename in config.exclude
+    true
+  else if basename in config.include
+    false
+  else
+    filepath isnt config.source and
+      (basename[0] is '_' or basename[0] is '.')
 
 # Creates all the default directories
 createDirectoryStructure = (dir) ->
