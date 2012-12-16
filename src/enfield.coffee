@@ -141,7 +141,6 @@ begin = (config) ->
         generateDebounced config, ->
           console.log 'Updated due to changed file'
 
-    # TODO: Run server
     if config.server
       fileServer = new(node_static.Server)(config.destination)
       server = http.createServer (request, response) ->
@@ -169,14 +168,15 @@ generate = (config, callback) ->
   console.log "Building site: #{config.source} -> #{config.destination}"
 
   posts = getPosts config
-  {pages, staticFiles} = getPagesAndStaticFiles config
+  {pages, static_files} = getPagesAndStaticFiles config
 
   # Create site data structure
   siteData =
-    config: config
     time: Date.now()
+    config: config
     posts: posts
     pages: pages
+    static_files: static_files
 
   # Setup tags & categories for posts
   for type in ['tags', 'categories']
@@ -188,7 +188,9 @@ generate = (config, callback) ->
           siteData[type][val] or= { name: val, posts: [] }
           siteData[type][val].posts.push post
 
-  # TODO: Run generators
+  # Run generators
+  for generator in config.generators
+    generator siteData
 
   liquidOptions =
     files: includes
@@ -232,7 +234,7 @@ generate = (config, callback) ->
 
   # Copy static files without overwhelming the file system
   async.forEachLimit(
-    staticFiles
+    static_files
     5
     (filepath, callback) ->
       # Make sure directory exists before copying
@@ -388,7 +390,7 @@ getPosts = (config) ->
 
 getPagesAndStaticFiles = (config) ->
   pages = []
-  staticFiles = []
+  static_files = []
 
   # Walk through all directories looking for files
   files = [config.source]
@@ -409,18 +411,22 @@ getPagesAndStaticFiles = (config) ->
       if data
         page = { raw_content: content, ext }
         page[key] = data[key] for key of data
+        page.published = if 'published' of data then data.published else true
 
         basename = path.basename filepath, ext
         if basename is 'index' and (ext is '.md' or ext is '.html')
           basename = ''
         page.url = "/#{path.join path.dirname(filepath), basename}"
+        # Special case
+        if page.url is '/.'
+          page.url = '/'
 
         # Add to collection
         pages.push page
       else
-        staticFiles.push filepath
+        static_files.push filepath
 
-  { pages, staticFiles }
+  { pages, static_files }
 
 # Get the frontmatter plus content of a file
 getDataAndContent = (filepath) ->

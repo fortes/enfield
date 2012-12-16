@@ -30,6 +30,7 @@ Enfield will load any `.coffee` or `.js` file from the `_plugins` directory. The
 
 * Converters
 * Liquid Filters
+* Generators
 
 ### Converters
 
@@ -73,6 +74,22 @@ module.exports = {
 }
 ```
 
+## Generators
+
+Generators are used to create additional content for your site based on custom logic.
+
+```js
+module.exports = {
+  "generators": {
+    "bar": function(site) {
+      // Have at it ...
+    }
+  }
+}
+```
+
+See `src/plugins/enfield-generators.coffee` for examples.
+
 ## TODO
 
 * Check for permalink collisions due to same slug and different dates
@@ -81,7 +98,7 @@ module.exports = {
 * Consider configurable permalinks
 * Post index page for year directories
 * Proper include support (nesting)
-* Process coffee / less?
+* Process LESS
 
 ## This Project Has a Stupid Name
 

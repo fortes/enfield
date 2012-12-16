@@ -8,21 +8,22 @@
     "coffee-script": "~1.4",
     "colors": "~0.6",
     "fs-extra": "~0.3",
-    "highlight": "~0.2"
+    "highlight": "~0.2",
     "js-yaml": "~1.0",
     "marked": "~0.2",
-    "moment": "~1.7"
+    "moment": "~1.7",
     "optimist": "~0.3",
     "node-static": "~0.6",
     "tinyliquid": "~0.1",
+    "uglify-js": "~1.3",
     "uslug": "~1.0",
-    "watch": "~0.5",
+    "watch": "~0.5"
   },
   "contributors": [
     {
-      "name": "Filipe Fortes",
+      "name": "Filipe Fortes"
     }
-  ]
+  ],
   "devDependencies": {
   },
   "bin": {
