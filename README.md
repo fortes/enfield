@@ -1,6 +1,6 @@
 # Enfield
 
-Jekyll-like static site generator for node.js.
+Jekyll-like static site generator for node.js that aims to be as compatible as possible with [mojombo/jekyll](https://github.com/mojombo/jekyll).
 
 ## Usage
 

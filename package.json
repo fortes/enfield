@@ -2,7 +2,7 @@
   "name": "enfield",
   "description": "Jekyll-like blog engine for node.js",
   "author": "Filipe Fortes <filipe@fortes.com>",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "dependencies": {
     "async": "~0.1",
     "coffee-script": "~1.4",
@@ -19,11 +19,17 @@
     "uslug": "~1.0",
     "watch": "~0.5"
   },
+  "engines": {
+    "node": "~0.8"
+  },
   "contributors": [
     {
       "name": "Filipe Fortes"
     }
   ],
+  "bugs": {
+    "url": "https://github.com/tanepiper/hyde/issues"
+  },
   "devDependencies": {
   },
   "bin": {
