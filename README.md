@@ -2,6 +2,13 @@
 
 Jekyll-like static site generator for node.js that aims to be as compatible as possible with [mojombo/jekyll](https://github.com/mojombo/jekyll).
 
+## Features
+
+* Compatible with the Jeykll directory and file structure
+* Simple, Jekyll-like plugin model, with CoffeeScript/JS instead of Ruby
+* Server / Auto-regenrate
+* Compile and minify CoffeeScript
+
 ## Usage
 
 Generated directly from `enfield --help`
@@ -26,7 +33,7 @@ Options:
 
 ## Plugins
 
-Enfield will load any `.coffee` or `.js` file from the `_plugins` directory. The plugin system is modeled after [Jekyll Plugins](https://github.com/mojombo/jekyll/wiki/Plugins). However, only a few plugin types are supported:
+Enfield will load any `.coffee` or `.js` file from the `_plugins` directory. The plugin system is modeled after [Jekyll Plugins](https://github.com/mojombo/jekyll/wiki/Plugins). However, the following plugin types are supported:
 
 * Converters
 * Liquid Filters
@@ -74,7 +81,7 @@ module.exports = {
 }
 ```
 
-## Generators
+### Generators
 
 Generators are used to create additional content for your site based on custom logic.
 
