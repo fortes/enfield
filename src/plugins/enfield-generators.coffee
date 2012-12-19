@@ -20,7 +20,7 @@ module.exports =
   generators:
     # Generates url aliases
     # Inspired by https://github.com/tsmango/jekyll_alias_generator
-    alias: (site) ->
+    alias: (site, callback) ->
       # Look for page aliases and an HTML-based redirect
       for page in site.posts.concat site.pages
         continue unless page.alias
@@ -40,8 +40,10 @@ module.exports =
             ext: '.html'
           }
 
+      callback()
+
     # Compile CoffeeScript files to minified JS
-    coffeeScript: (site) ->
+    coffeeScript: (site, callback) ->
       for filepath in site.static_files
         if /\.coffee$/.test filepath
           # Compile and minify
@@ -57,3 +59,5 @@ module.exports =
             raw_content: minified
             ext: '.js'
           }
+
+      callback()

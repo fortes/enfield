@@ -88,8 +88,16 @@ Generators are used to create additional content for your site based on custom l
 ```js
 module.exports = {
   "generators": {
-    "bar": function(site) {
-      // Have at it ...
+    "bar": function(site, callback) {
+      // Same data structure as passed to Liquid templates. Including:
+      // - site.posts
+      // - site.pages
+      // - site.tags
+      // - site.categories
+      // - site.static_files
+
+      // Make sure to callback when you're done
+      callback(null);
     }
   }
 }

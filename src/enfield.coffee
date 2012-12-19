@@ -115,39 +115,42 @@ begin = (config) ->
   config.converters.sort (a, b) ->
     b.priority - a.priority
 
-  generate config
+  generate config, (err) ->
+    if err
+      console.error err.msg
+      process.exit -1
 
-  if config.auto
-    console.log "Auto-regenerating enabled".green +
-      " #{config.source} -> #{config.destination}".green
-    # Avoid infinite refreshing from watching the output directory
-    realDestination = path.resolve config.destination
-    fileFilter = (f) ->
-      path.resolve(f) is realDestination
-    watch.watchTree config.source, { filter: fileFilter }, (f, curr, prev) ->
-      if typeof f is 'object' and curr is null and prev is null
-        # Finished walking tree, ignore
-        return
-      else if prev is null
-        # New file
-        generateDebounced config, ->
-          console.log 'Updated due to new file'
-      else if curr.nlink is 0
-        # Removed file
-        generateDebounced config, ->
-          console.log 'Updated due to removed file'
-      else
-        # File was changed
-        generateDebounced config, ->
-          console.log 'Updated due to changed file'
+    if config.auto
+      console.log "Auto-regenerating enabled".green +
+        " #{config.source} -> #{config.destination}".green
+      # Avoid infinite refreshing from watching the output directory
+      realDestination = path.resolve config.destination
+      fileFilter = (f) ->
+        path.resolve(f) is realDestination
+      watch.watchTree config.source, { filter: fileFilter }, (f, curr, prev) ->
+        if typeof f is 'object' and curr is null and prev is null
+          # Finished walking tree, ignore
+          return
+        else if prev is null
+          # New file
+          generateDebounced config, ->
+            console.log 'Updated due to new file'
+        else if curr.nlink is 0
+          # Removed file
+          generateDebounced config, ->
+            console.log 'Updated due to removed file'
+        else
+          # File was changed
+          generateDebounced config, ->
+            console.log 'Updated due to changed file'
 
-    if config.server
-      fileServer = new(node_static.Server)(config.destination)
-      server = http.createServer (request, response) ->
-        request.addListener 'end', ->
-          fileServer.serve request, response
-      server.listen config.server_port
-      console.log "Running server at http://localhost:#{config.server_port}"
+      if config.server
+        fileServer = new(node_static.Server)(config.destination)
+        server = http.createServer (request, response) ->
+          request.addListener 'end', ->
+            fileServer.serve request, response
+        server.listen config.server_port
+        console.log "Running server at http://localhost:#{config.server_port}"
 
 lastGenerated = 0
 generateTimeoutId = 0
@@ -189,15 +192,22 @@ generate = (config, callback) ->
           siteData[type][val].posts.push post
 
   # Run generators
-  for generator in config.generators
-    generator siteData
+  async.forEachSeries(
+    config.generators,
+    (generator, cb) -> generator siteData, cb
+    (err) ->
+      if err then return callback err
+      writeSite config, siteData, layouts, includes, callback
+  )
 
+# Write site out to disk
+writeSite = (config, siteData, layouts, includes, callback) ->
   liquidOptions =
     files: includes
     original: true
 
   # Write out pages and posts
-  for page in posts.concat pages
+  for page in siteData.posts.concat siteData.pages
     # Respect published flag
     continue unless config.future or page.published
 
@@ -234,19 +244,20 @@ generate = (config, callback) ->
 
   # Copy static files without overwhelming the file system
   async.forEachLimit(
-    static_files
+    siteData.static_files
     5
-    (filepath, callback) ->
+    (filepath, cb) ->
       # Make sure directory exists before copying
       outPath = path.join(config.destination, filepath)
       fs.mkdirsSync path.dirname(outPath)
-      fs.copy filepath, outPath, callback
-    (err) -> if err then throw err
+      fs.copy filepath, outPath, cb
+    (err) ->
+      if err then throw err
+      console.log "Successfully generated site: ".green +
+        "#{path.resolve config.source} -> #{config.destination}".green
+      callback() if callback
   )
 
-  console.log "Successfully generated site: ".green +
-    "#{path.resolve config.source} -> #{config.destination}".green
-  callback() if callback
 
 # Make sure the directories needed are there
 checkDirectories = (config) ->
