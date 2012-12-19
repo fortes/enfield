@@ -7,7 +7,7 @@ Jekyll-like static site generator for node.js that aims to be as compatible as p
 * Compatible with the Jeykll directory and file structure
 * Simple, Jekyll-like plugin model, with CoffeeScript/JS instead of Ruby
 * Server / Auto-regenrate
-* Compile and minify CoffeeScript
+* Compile and minify CoffeeScript & LESS
 
 ## Usage
 
@@ -107,13 +107,12 @@ See `src/plugins/enfield-generators.coffee` for examples.
 
 ## TODO
 
-* Check for permalink collisions due to same slug and different dates
 * Support some form of post pagination
 * site_url option
 * Consider configurable permalinks
 * Post index page for year directories
 * Proper include support (nesting)
-* Process LESS
+* Check for permalink collisions due to same slug and different dates
 
 ## This Project Has a Stupid Name
 

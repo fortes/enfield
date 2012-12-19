@@ -1,7 +1,9 @@
 # Built-in generators
+async = require 'async'
 coffee = require 'coffee-script'
-uglify = require 'uglify-js'
 fs = require 'fs-extra'
+less = require 'less'
+uglify = require 'uglify-js'
 
 createRedirectHTML = (page) ->
   url = page.url
@@ -61,3 +63,28 @@ module.exports =
           }
 
       callback()
+
+    # Compile LESS files into minified CSS
+    lessCSS: (site, callback) ->
+      # Collect files
+      lessFiles = site.static_files.filter (f) -> /\.less$/.test f
+
+      # Work in parallel
+      async.forEachLimit(
+        lessFiles
+        5
+        (filepath, cb) ->
+          fs.readFile filepath, (err, contents) ->
+            if err then return cb err
+            # Render CSS
+            less.render contents.toString(), { compress:true }, (err, css) ->
+              outPath = filepath.replace /\.less$/, ''
+              site.pages.push {
+                published: true
+                url: outPath
+                raw_content: css
+                ext: '.css'
+              }
+              cb()
+        callback
+      )
