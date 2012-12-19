@@ -54,8 +54,9 @@ module.exports = {
       "outputExtension": function(ext) {
         return ".html";
       },
-      "convert": function(content) {
-        return content.replace('foo', '');
+      "convert": function(content, callback) {
+        // Return converted value via callback(err, content)
+        callback(null, content.replace('foo', ''));
       }
     }
   }
@@ -104,6 +105,22 @@ module.exports = {
 ```
 
 See `src/plugins/enfield-generators.coffee` for examples.
+
+## Changelog
+
+### Version 0.2.0
+
+- Change generator and convert plugin APIs to be async
+- Compile and minify LESS.css via bundled plugin
+
+### Version 0.1.1
+
+- Add support for generator plugins.
+- Compile and minify CoffeeScript via bundled plugin
+
+### Version 0.1.0
+
+- First Release
 
 ## TODO
 

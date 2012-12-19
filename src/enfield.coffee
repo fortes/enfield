@@ -117,8 +117,11 @@ begin = (config) ->
 
   generate config, (err) ->
     if err
-      console.error err.msg
+      console.error err
       process.exit -1
+
+    console.log "Successfully generated site: ".green +
+      "#{path.resolve config.source} -> #{config.destination}".green
 
     if config.auto
       console.log "Auto-regenerating enabled".green +
@@ -174,7 +177,7 @@ generate = (config, callback) ->
   {pages, static_files} = getPagesAndStaticFiles config
 
   # Create site data structure
-  siteData =
+  site =
     time: Date.now()
     config: config
     posts: posts
@@ -183,81 +186,98 @@ generate = (config, callback) ->
 
   # Setup tags & categories for posts
   for type in ['tags', 'categories']
-    siteData[type] = {}
+    site[type] = {}
     for post in posts
       continue unless config.future or post.published
       if post[type]
         for val in post[type]
-          siteData[type][val] or= { name: val, posts: [] }
-          siteData[type][val].posts.push post
+          site[type][val] or= { name: val, posts: [] }
+          site[type][val].posts.push post
 
-  # Run generators
-  async.forEachSeries(
-    config.generators,
-    (generator, cb) -> generator siteData, cb
-    (err) ->
-      if err then return callback err
-      writeSite config, siteData, layouts, includes, callback
-  )
-
-# Write site out to disk
-writeSite = (config, siteData, layouts, includes, callback) ->
   liquidOptions =
     files: includes
     original: true
 
-  # Write out pages and posts
-  for page in siteData.posts.concat siteData.pages
-    # Respect published flag
-    continue unless config.future or page.published
+  # Run generators
+  async.forEachSeries(
+    config.generators,
+    (generator, cb) -> generator site, cb
+    (err) ->
+      if err then return callback err
+      # Write content to disk
+      async.series(
+        [
+          (cb) -> writePostsAndPages site, layouts, liquidOptions, cb
+          (cb) -> writeStaticFiles site, cb
+        ]
+        callback
+      )
+  )
 
-    # Content can contain liquid directives, process now
-    content = tinyliquid.compile(page.raw_content, liquidOptions) {
-      site: siteData
-      page: page
-    }, config.filters
+writePage = (page, site, layouts, liquidOptions, callback) ->
+  # Respect published flag
+  return callback() unless site.config.future or page.published
 
-    # Run conversion
-    {ext, content} = convertContent page.ext, content, config.converters
-    page.content = content
+  # Content can contain liquid directives, process now
+  content = tinyliquid.compile(page.raw_content, liquidOptions)(
+    { site, page }
+    site.config.filters
+  )
+
+  # Run conversion
+  convertContent page.ext, content, site.config.converters, (err, res) ->
+    if err then return callback err
+
+    page.content = res.content
+    {ext} = res
 
     # Apply layout, if it exists
     if page.layout and page.layout of layouts
       template = layouts[page.layout]
       rendered = template {
-        content: content
-        site: siteData
+        content: page.content
+        site: site
         page: page
-      }, config.filters
+      }, site.config.filters
     else
-      rendered = content
+      rendered = page.content
 
     if ext is '.html'
-      outputPath = path.join config.destination, page.url, 'index.html'
+      outputPath = path.join site.config.destination, page.url, 'index.html'
     else
       page.url += ext
-      outputPath = path.join config.destination, page.url
+      outputPath = path.join site.config.destination, page.url
 
     # Write file
     fs.mkdirsSync path.dirname outputPath
-    fs.writeFileSync outputPath, rendered
+    fs.writeFile outputPath, rendered, callback
 
+    return
+  return
+
+writePostsAndPages = (site, layouts, liquidOptions, callback) ->
+  # Write out pages and posts in parallel
+  async.forEachLimit(
+    site.posts.concat(site.pages)
+    5
+    (page, cb) -> writePage page, site, layouts, liquidOptions, cb
+    callback
+  )
+  return
+
+writeStaticFiles = (site, callback) ->
   # Copy static files without overwhelming the file system
   async.forEachLimit(
-    siteData.static_files
+    site.static_files
     5
     (filepath, cb) ->
       # Make sure directory exists before copying
-      outPath = path.join(config.destination, filepath)
+      outPath = path.join site.config.destination, filepath
       fs.mkdirsSync path.dirname(outPath)
       fs.copy filepath, outPath, cb
-    (err) ->
-      if err then throw err
-      console.log "Successfully generated site: ".green +
-        "#{path.resolve config.source} -> #{config.destination}".green
-      callback() if callback
+    callback
   )
-
+  return
 
 # Make sure the directories needed are there
 checkDirectories = (config) ->
@@ -457,16 +477,19 @@ getDataAndContent = (filepath) ->
   content: lines.join "\n"
   ext: path.extname filepath
 
-convertContent = (ext, content, converters) ->
+convertContent = (ext, content, converters, callback) ->
   for converter in converters
     if converter.matches ext
-      return {
-        ext: converter.outputExtension ext
-        content: converter.convert content
-      }
+      converter.convert content, (err, converted) ->
+        callback null, {
+          ext: converter.outputExtension ext
+          content: converted
+        }
+      return
 
   # None found, leave unmodified
-  return { ext, content }
+  callback null, { ext, content }
+  return
 
 # Whether the file should be ignored by the system
 isHidden = (filepath, config) ->

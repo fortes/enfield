@@ -15,5 +15,5 @@ module.exports =
         ext is '.md'
       outputExtension: (ext) ->
         '.html'
-      convert: (content) ->
-        marked content
+      convert: (content, callback) ->
+        callback null, marked content
