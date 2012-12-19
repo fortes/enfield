@@ -21,13 +21,13 @@ module.exports =
       .usage("""Enfield is a static-site generator modeled after Jekyll
 
 Usage:
-  $0                          # Generate . -> ./_site
-  $0 [destination]            # Generate . -> <path>
-  $0 [source] [destination]   # Generate <path> -> <path>
+  enfield                          # Generate . -> ./_site
+  enfield [destination]            # Generate . -> <path>
+  enfield [source] [destination]   # Generate <path> -> <path>
 
-  $0 init [directory]         # Build default directory structure
-  $0 page [title]             # Create a new post with today's date
-  $0 post [title]             # Create a new page
+  enfield init [directory]         # Build default directory structure
+  enfield page [title]             # Create a new post with today's date
+  enfield post [title]             # Create a new page
 """)
       .describe('auto', 'Auto-regenerate')
       .describe('server [PORT]', 'Start a web server (default port 4000)')
