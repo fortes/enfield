@@ -1,0 +1,13 @@
+# Version 0.2.0
+
+- Change generator and convert plugin APIs to be async
+- Compile and minify LESS.css via bundled plugin
+
+# Version 0.1.1
+
+- Add support for generator plugins.
+- Compile and minify CoffeeScript via bundled plugin
+
+# Version 0.1.0
+
+- First Release
