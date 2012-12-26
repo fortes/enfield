@@ -494,13 +494,13 @@ getPagesAndStaticFiles = (config) ->
 # Get the frontmatter plus content of a file
 getDataAndContent = (filepath) ->
   lines = fs.readFileSync(filepath).toString().split(/\r\n|\n|\r/)
-  if lines[0] is "---"
+  if /^---\s?$/.test lines[0]
     lines.shift()
     frontMatter = []
 
     while (lines.length)
       currentLine = lines.shift()
-      break if currentLine is '---'
+      break if /^---\s?$/.test currentLine
       frontMatter.push currentLine
 
     data = yaml.load frontMatter.join "\n"
