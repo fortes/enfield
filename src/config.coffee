@@ -12,6 +12,9 @@ DEFAULTS =
   plugins: '_plugins'
   layout: '_layouts'
 
+  baseurl: ''
+  url: 'http://localhost:4000'
+
   future: true
   #lsi: false
   #pygments: false

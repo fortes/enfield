@@ -1,6 +1,7 @@
 # Version 0.2.1
 
 - Make files with DOS line endings work
+- Add support for `site.url` and `site.baseurl` properties from command-line
 
 # Version 0.2.0
 

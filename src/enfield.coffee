@@ -31,6 +31,7 @@ Usage:
 """)
       .describe('auto', 'Auto-regenerate')
       .describe('server [PORT]', 'Start a web server (default port 4000)')
+      .describe('base-url [URL]', 'Serve website from a give base URL')
       .describe('url [URL]', 'Set custom site.url')
 
     args = optimist.parse(argv)
@@ -92,7 +93,11 @@ Usage:
         # Server activates auto
         if args.auto or config.server
           config.auto = true
-        # TODO: args.url
+        # URLs
+        if args['base-url']
+          config.baseurl = args['base-url']
+        if args.url
+          config.url = args.url
 
         begin config
 
@@ -179,6 +184,8 @@ generate = (config, callback) ->
   # Create site data structure
   site =
     time: Date.now()
+    baseurl: config.baseurl
+    url: config.url
     config: config
     posts: posts
     pages: pages
