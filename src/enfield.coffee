@@ -336,10 +336,11 @@ getLayoutsAndIncludes = (config) ->
   includes = {}
   if fs.existsSync includesDir
     for file in fs.readdirSync includesDir
-      if fs.statSync(file).isDirectory()
+      filepath = path.join includesDir, file
+      if fs.statSync(filepath).isDirectory()
         # TODO: Wat?
       else
-        includes[file] = fs.readFileSync file
+        includes[file] = fs.readFileSync(filepath).toString()
 
   fileData = {}
   fileContents = {}
