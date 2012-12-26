@@ -371,21 +371,37 @@ getLayoutsAndIncludes = (config) ->
 
   { layouts, includes }
 
+# Find all directories named _posts for inclusion
+getPostDirectories = (config) ->
+  dirs = []
+  toCheck = [config.source]
+
+  while dirpath = toCheck.pop()
+    if fs.statSync(dirpath).isDirectory()
+      for filename in fs.readdirSync dirpath
+        childPath = path.join dirpath, filename
+        unless fs.statSync(childPath).isDirectory()
+          continue
+        if filename is '_posts'
+          dirs.push childPath
+        else unless isHidden childPath, config
+          toCheck.push childPath
+
+  dirs
+
 # Get all posts
 postMask = /^(\d{4})-(\d{2})-(\d{2})-(.+)\.(md|html)$/
 getPosts = (config) ->
+  postDirs = getPostDirectories(config)
   posts = []
-  postDir = path.join config.source, '_posts'
   permalinks = {}
-  for filename in fs.readdirSync postDir
-    if match = filename.match postMask
-      try
-        {data, content, ext} = getDataAndContent path.join postDir, filename
-      catch err
-        console.error "Error while trying to read #{filename}:".red
-        console.error err.toString()
-        console.error "Skipping post #{filename}".yellow
+  for postDir in postDirs
+    for filename in fs.readdirSync postDir
+      # Doesn't match post mask, ignore
+      unless match = filename.match postMask
         continue
+
+      {data, content, ext} = getDataAndContent path.join postDir, filename
 
       post = { raw_content: content, ext }
       post[key] = data[key] for key of data
@@ -405,10 +421,15 @@ getPosts = (config) ->
         post.categories = post.category
       if post.categories and typeof post.categories is 'string'
         post.categories = post.categories.split ' '
+      # Add categories from directory
+      dirCats = postDir.split('/').filter((t) -> t isnt '_posts')
+      if dirCats.length
+        post.categories = if post.categories
+          post.categories.concat dirCats
+        else
+          dirCats
 
       posts.push post
-    else
-      # Doesn't match post mask, ignore
 
   # Sort on date
   posts.sort (a, b) ->
@@ -423,6 +444,10 @@ getPosts = (config) ->
       post.next = prev
       prev.prev = post
     prev = post
+
+  # Ruby arrays have .first and .last, which some liquid templates depend on
+  posts.first = posts[0]
+  posts.last = posts[posts.length - 1]
 
   posts
 
