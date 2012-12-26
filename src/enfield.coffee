@@ -15,7 +15,7 @@ configReader = require './config'
 CONFIG_FILENAME = '_config.yml'
 
 module.exports =
-  version: '0.2.0'
+  version: '0.2.1'
   main: (argv) ->
     optimist = require('optimist')
       .usage("""Enfield is a static-site generator modeled after Jekyll
@@ -461,7 +461,7 @@ getPagesAndStaticFiles = (config) ->
 
 # Get the frontmatter plus content of a file
 getDataAndContent = (filepath) ->
-  lines = fs.readFileSync(filepath).toString().split("\n")
+  lines = fs.readFileSync(filepath).toString().split(/\r\n|\n|\r/)
   if lines[0] is "---"
     lines.shift()
     frontMatter = []
