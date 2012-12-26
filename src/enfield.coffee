@@ -15,7 +15,7 @@ configReader = require './config'
 CONFIG_FILENAME = '_config.yml'
 
 module.exports =
-  version: '0.0.1'
+  version: '0.2.0'
   main: (argv) ->
     optimist = require('optimist')
       .usage("""Enfield is a static-site generator modeled after Jekyll
