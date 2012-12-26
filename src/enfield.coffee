@@ -391,7 +391,7 @@ getPostDirectories = (config) ->
   dirs
 
 # Get all posts
-postMask = /^(\d{4})-(\d{2})-(\d{2})-(.+)\.(md|html)$/
+postMask = /^(\d{4})-(\d{2})-(\d{2})-(.+)\.(md|markdown|html)$/
 getPosts = (config) ->
   postDirs = getPostDirectories(config)
   posts = []

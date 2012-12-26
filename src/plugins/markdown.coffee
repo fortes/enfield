@@ -12,7 +12,7 @@ module.exports =
     markdown:
       priority: 2
       matches: (ext) ->
-        ext is '.md'
+        ext is '.md' or ext is '.markdown'
       outputExtension: (ext) ->
         '.html'
       convert: (content, callback) ->
