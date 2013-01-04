@@ -127,6 +127,7 @@ See `src/plugins/enfield-generators.coffee` for examples.
 ### Version 0.3.0 (in progress)
 
 - Initial support for custom tag plugins
+- Support Jekyll-style pagination
 - Add support for `post_url` included in Jekyll
 - Textile support via bundled plugin
 

@@ -61,3 +61,67 @@ module.exports =
 
       console.error "Error: post_url #{tokens[0]} could not be found"
       return '#'
+
+  generators:
+    "pagination": (site, callback) ->
+      # Ignore if pagination isn't enabled or there are no posts
+      unless site.config['paginate'] and site.posts.length
+        return callback()
+
+      # As in Jekyll, pagination only works in index.html files
+      for page in site.pages
+        # Only paginate at root
+        unless (page.ext is '.html') and (page.url is '/')
+          continue
+
+        page_number = 1
+        per_page = site.config['paginate']
+        posts = site.posts.slice 0, per_page
+        if site.posts.length
+          total_posts = site.posts.length
+        else
+          total_posts = 0
+        total_pages = Math.ceil total_posts / per_page
+        previous_page = 0
+        next_page = if page_number < total_pages then page_number + 1 else 0
+
+        # Special case first page
+        page.paginator = {
+          page: page_number
+          per_page
+          posts
+          total_posts
+          total_pages
+          previous_page
+          next_page
+        }
+
+        remainingPosts = site.posts.slice per_page
+        for page_number in [2..total_pages] by 1
+          # Clone the base page
+          newPage = {}
+          site.pages.push newPage
+
+          for key, value of page
+            newPage[key] = value
+          newPage.url = "/page#{page_number}"
+
+          previous_page = page_number - 1
+          posts = remainingPosts.slice 0, per_page
+          remainingPosts = remainingPosts.slice per_page
+          if page_number < total_pages
+            next_page = page_number + 1
+          else
+            next_page = 0
+
+          newPage.paginator = {
+            page: page_number
+            per_page
+            posts
+            total_posts
+            total_pages
+            previous_page
+            next_page
+          }
+
+      callback()

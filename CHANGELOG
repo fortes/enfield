@@ -1,6 +1,7 @@
 # Version 0.3.0
 
 - Initial support for custom tag plugins
+- Support Jekyll-style pagination
 - Add support for `post_url` included in Jekyll
 - Textile support via bundled plugin
 

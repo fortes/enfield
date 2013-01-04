@@ -237,7 +237,10 @@ generate = (config, callback) ->
 
   layouts = {}
   for name, content of rawLayouts
-    layouts[name] = tinyliquid.compile content, liquidOptions
+    try
+      layouts[name] = tinyliquid.compile content, liquidOptions
+    catch err
+      console.error "Error while compiling layout: #{name}"
 
   # Run generators
   async.forEachSeries(
@@ -260,10 +263,14 @@ writePage = (page, site, layouts, liquidOptions, callback) ->
   return callback() unless site.config.future or page.published
 
   # Content can contain liquid directives, process now
-  content = tinyliquid.compile(page.raw_content, liquidOptions)(
-    { site, page }
-    site.config.filters
-  )
+  try
+    content = tinyliquid.compile(page.raw_content, liquidOptions)(
+      { site, page, paginator: page.paginator }
+      site.config.filters
+    )
+  catch err
+    console.error "Error while processing page: #{page.url}"
+    callback()
 
   # Run conversion
   convertContent page.ext, content, site.config.converters, (err, res) ->
@@ -430,7 +437,7 @@ getPostDirectories = (config) ->
   dirs
 
 # Get all posts
-postMask = /^(\d{4})-(\d{2})-(\d{2})-(.+)\.(md|markdown|html|textile)$/
+postMask = /^(\d{4})-(\d{2})-(\d{2})-(.+)\.(md|markdown|mdown|html|textile)$/
 getPosts = (config) ->
   postDirs = getPostDirectories(config)
   posts = []
@@ -517,7 +524,7 @@ getPagesAndStaticFiles = (config) ->
         page.published = if 'published' of data then data.published else true
 
         basename = path.basename filepath, ext
-        if basename is 'index' and /^\.(md|markdown|textile|html)$/.test ext
+        if basename is 'index' and /^\.(md|markdown|mdown|textile|html)$/.test ext
           basename = ''
         page.url = "/#{path.join path.dirname(filepath), basename}"
         # Special case
