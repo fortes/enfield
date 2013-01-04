@@ -130,6 +130,7 @@ See `src/plugins/enfield-generators.coffee` for examples.
 - Support Jekyll-style pagination
 - Add support for `post_url` included in Jekyll
 - Textile support via bundled plugin
+- Make nested includes actually work
 
 ### Version 0.2.1
 
@@ -155,7 +156,6 @@ See `src/plugins/enfield-generators.coffee` for examples.
 
 * Consider configurable permalinks
 * Post index page for year directories
-* Proper include support (nesting)
 * Check for permalink collisions due to same slug and different dates
 
 ## This Project Has a Stupid Name

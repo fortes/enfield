@@ -4,6 +4,7 @@
 - Support Jekyll-style pagination
 - Add support for `post_url` included in Jekyll
 - Textile support via bundled plugin
+- Make nested includes actually work
 
 # Version 0.2.1
 

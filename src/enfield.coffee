@@ -9,6 +9,7 @@ node_static = require 'node-static'
 watch = require 'watch'
 http = require 'http'
 async = require 'async'
+toposort = require 'toposort'
 
 configReader = require './config'
 
@@ -231,7 +232,6 @@ generate = (config, callback) ->
       return
 
   liquidOptions =
-    original: true
     files: includes
     tags: customTags
 
@@ -376,14 +376,48 @@ loadPlugins = (config, pluginDir) ->
 getIncludes = (config) ->
   includesDir = path.join config.source, '_includes'
 
-  includes = {}
-  if fs.existsSync includesDir
-    for file in fs.readdirSync includesDir
-      filepath = path.join includesDir, file
-      if fs.statSync(filepath).isDirectory()
-        # TODO: Wat?
+  unless fs.existsSync includesDir
+    return {}
+
+  # Grab the plain contents of all files, including within subdirectories
+  contents = {}
+  dependencyEdges = []
+  files = ['']
+  while files.length
+    filepath = files.pop()
+    actualPath = path.join includesDir, filepath
+    if fs.statSync(actualPath).isDirectory()
+      for filename in fs.readdirSync actualPath
+        childPath = path.join filepath, filename
+        files.push childPath
+    else
+      # Find nested includes
+      contents[filepath] = content = fs.readFileSync(actualPath).toString()
+
+      includeRegExp = /\{%\s*include\s+([^\s%]+)\s*%\}/img
+      matches = content.match includeRegExp
+
+      if matches
+        dependencies = matches.map (str) ->
+          match = str.match /\{%\s*include\s+([^\s%]+)\s*%\}/im
+          dependencyEdges.push [filepath, match[1]]
       else
-        includes[file] = fs.readFileSync(filepath).toString()
+        dependencies = []
+
+  # Topological sort for processing includes since tinyliquid needs includes to
+  # be precompiled
+  # Note, can contain dupes
+  try
+    sorted = toposort(dependencyEdges).reverse()
+  catch err
+    console.error "Error: Cyclic dependency within includes".red
+    console.error err.toString()
+    return {}
+
+  includes = {}
+  for filepath in sorted
+    continue if filepath of includes
+    includes[filepath] = tinyliquid.parse(contents[filepath], files: includes).code
 
   includes
 
