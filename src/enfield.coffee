@@ -382,6 +382,7 @@ getIncludes = (config) ->
 
   # Grab the plain contents of all files, including within subdirectories
   contents = {}
+  noDependencies = []
   dependencyEdges = []
   files = ['']
   while files.length
@@ -399,17 +400,17 @@ getIncludes = (config) ->
       matches = content.match includeRegExp
 
       if matches
-        dependencies = matches.map (str) ->
+        for match in matches
           match = str.match /\{%\s*include\s+([^\s%]+)\s*%\}/im
           dependencyEdges.push [filepath, match[1]]
       else
-        dependencies = []
+        noDependencies.push filepath
 
   # Topological sort for processing includes since tinyliquid needs includes to
   # be precompiled
   # Note, can contain dupes
   try
-    sorted = toposort(dependencyEdges).reverse()
+    sorted = noDependencies.concat toposort(dependencyEdges).reverse()
   catch err
     console.error "Error: Cyclic dependency within includes".red
     console.error err.toString()
