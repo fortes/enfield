@@ -416,7 +416,7 @@ getIncludes = (config) ->
 
   includes = {}
   for filepath in sorted
-    continue if filepath of includes
+    continue if (filepath of includes) or not (filepath of contents)
     includes[filepath] = tinyliquid.parse(contents[filepath], files: includes).code
 
   includes
