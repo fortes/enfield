@@ -4,9 +4,18 @@ Jekyll-like static site generator for node.js that aims to be as compatible as p
 
 ## Features
 
+Core functionality is identical to Jekyll:
+
+* Blog aware static site generator
 * Compatible with the Jeykll directory and file structure
-* Simple, Jekyll-like plugin model, with CoffeeScript/JS instead of Ruby
+* Use Markdown or Textile for posts
+* Layouts written using liquid template engine
 * Server / Auto-regenrate
+
+There are a few bonus features not present in the default install of Jekyll:
+
+* Jekyll-like plugin model, with CoffeeScript/JS instead of Ruby
+* Use markdown/textile within includes
 * Compile and minify CoffeeScript & LESS
 
 ## Usage
@@ -131,6 +140,7 @@ See `src/plugins/enfield-generators.coffee` for examples.
 - Add support for `post_url` included in Jekyll
 - Textile support via bundled plugin
 - Make nested includes actually work
+- Includes can be markdown, textile, etc
 
 ### Version 0.2.1
 

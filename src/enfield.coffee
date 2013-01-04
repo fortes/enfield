@@ -179,86 +179,71 @@ generateDebounced = (config, callback) ->
 generate = (config, callback) ->
   console.log "Building site: #{config.source} -> #{config.destination}"
 
-  includes = getIncludes config
-  rawLayouts = getRawLayouts config
-
-  posts = getPosts config
-  {pages, static_files} = getPagesAndStaticFiles config
-
-  # Create site data structure
-  site =
-    time: Date.now()
-    baseurl: config.baseurl
-    url: config.url
-    config: config
-    posts: posts
-    pages: pages
-    static_files: static_files
-    tags: {}
-    categories: {}
-
-  # Setup tags & categories for posts
-  for type in ['tags', 'categories']
-    for post in posts
-      continue unless config.future or post.published
-      if post[type]
-        for val in post[type]
-          site[type][val] or= { name: val, posts: [] }
-          site[type][val].posts.push post
-
-  # Setup custom tags
-  customTags = {}
-  for tagName, fn of config.tags
-    do (tagName, fn) ->
-      customTags[tagName] = (words, line, context, methods) ->
-        # Call the plugin function using a much simpler API
-        result = fn words, site
-
-        # Tinyliquid custom tags are a little complex and not very well
-        # documented. The output of this function is ultimately evaluated as a
-        # script. For now, restrict the custom tag model here to be someting
-        # very simple -- outputting a string only. This means we don't support
-        # start & end tags for now.
-
-        # Escape the content first
-        result = result.replace '\\', '\\\\'
-        result = result.replace /"/img, '\\"'
-        # Join lines appropriately
-        sanitized = []
-        for line in result.split '\n'
-          sanitized.push "\"#{line}\""
-
-        return """$_buf += #{sanitized.join '+ "\n" + '} """
-
-      return
-
-  liquidOptions =
-    files: includes
-    tags: customTags
-
-  layouts = {}
-  for name, content of rawLayouts
-    try
-      layouts[name] = tinyliquid.compile content, liquidOptions
-    catch err
-      console.error "Error while compiling layout: #{name}".red
-      console.error err.toString()
-
-  # Run generators
-  async.forEachSeries(
-    config.generators,
-    (generator, cb) -> generator site, cb
-    (err) ->
+  # Kick everything off in parallel
+  async.parallel(
+    [
+      (cb) -> getIncludes config, cb
+      (cb) -> getRawLayouts config, cb
+      (cb) -> getPosts config, cb
+      (cb) -> getPagesAndStaticFiles config, cb
+    ],
+    (err, results) ->
       if err then return callback err
-      # Write content to disk
-      async.series(
-        [
-          (cb) -> writePostsAndPages site, layouts, liquidOptions, cb
-          (cb) -> writeStaticFiles site, cb
-        ]
-        callback
+      [includes, rawLayouts, posts, {pages, static_files}] = results
+
+      # Create site data structure
+      site =
+        time: Date.now()
+        baseurl: config.baseurl
+        url: config.url
+        config: config
+        posts: posts
+        pages: pages
+        static_files: static_files
+        tags: {}
+        categories: {}
+
+      # Setup tags & categories for posts
+      for type in ['tags', 'categories']
+        for post in posts
+          continue unless config.future or post.published
+          if post[type]
+            for val in post[type]
+              site[type][val] or= { name: val, posts: [] }
+              site[type][val].posts.push post
+
+      customTags = setupCustomTags config
+
+      liquidOptions =
+        files: includes
+        tags: customTags
+
+      layouts = {}
+      for name, content of rawLayouts
+        try
+          layouts[name] = tinyliquid.compile content, liquidOptions
+        catch err
+          console.error "Error while compiling layout: #{name}".red
+          console.error err.toString()
+
+      # Run generators
+      async.forEachSeries(
+        config.generators,
+        (generator, cb) -> generator site, cb
+        (err) ->
+          if err then return callback err
+          # Write content to disk
+          async.series(
+            [
+              (cb) -> writePostsAndPages site, layouts, liquidOptions, cb
+              (cb) -> writeStaticFiles site, cb
+            ]
+            callback
+          )
       )
   )
+
+  return
 
 writePage = (page, site, layouts, liquidOptions, callback) ->
   # Respect published flag
@@ -374,7 +359,7 @@ loadPlugins = (config, pluginDir) ->
 
   return
 
-getIncludes = (config) ->
+getIncludes = (config, callback) ->
   includesDir = path.join config.source, '_includes'
 
   unless fs.existsSync includesDir
@@ -382,8 +367,6 @@ getIncludes = (config) ->
 
   # Grab the plain contents of all files, including within subdirectories
   contents = {}
-  noDependencies = []
-  dependencyEdges = []
   files = ['']
   while files.length
     filepath = files.pop()
@@ -393,38 +376,61 @@ getIncludes = (config) ->
         childPath = path.join filepath, filename
         files.push childPath
     else
-      # Find nested includes
-      contents[filepath] = content = fs.readFileSync(actualPath).toString()
+      contents[filepath] = fs.readFileSync(actualPath).toString()
 
+  # Calculate dependency graph
+  noDependencies = []
+  dependencyEdges = []
+  calculateIncludeDependency = (filepath, cb) ->
+    ext = path.extname filepath
+    content = contents[filepath]
+    # Run Conversion, if applicable
+    convertContent ext, content, config.converters, (err, res) ->
+      if err then return cb err
+
+      {content} = res
+      contents[filepath] = content
+
+      # Find nested includes
       includeRegExp = /\{%\s*include\s+([^\s%]+)\s*%\}/img
       matches = content.match includeRegExp
 
       if matches
-        for match in matches
+        for str in matches
           match = str.match /\{%\s*include\s+([^\s%]+)\s*%\}/im
           dependencyEdges.push [filepath, match[1]]
       else
         noDependencies.push filepath
 
-  # Topological sort for processing includes since tinyliquid needs includes to
-  # be precompiled
-  # Note, can contain dupes
-  try
-    sorted = noDependencies.concat toposort(dependencyEdges).reverse()
-  catch err
-    console.error "Error: Cyclic dependency within includes".red
-    console.error err.toString()
-    return {}
+      cb()
 
-  includes = {}
-  for filepath in sorted
-    continue if (filepath of includes) or not (filepath of contents)
-    includes[filepath] = tinyliquid.parse(contents[filepath], files: includes).code
+  files = Object.keys contents
+  async.forEachSeries files, calculateIncludeDependency, (err) ->
+    if err then return callback err
 
-  includes
+    # Topological sort for processing includes since tinyliquid needs includes
+    # to be precompiled
+    # Note, can contain dupes
+    try
+      sorted = noDependencies.concat toposort(dependencyEdges).reverse()
+    catch err
+      console.error "Error: Cyclic dependency within includes".red
+      console.error err.toString()
+      return {}
+
+    includes = {}
+    for filepath in sorted
+      continue if (filepath of includes)
+      if filepath of contents
+        # TinyLiquid requires parsed (not compiled) code in order for includes
+        # to work properly
+        parsedInclude = tinyliquid.parse(contents[filepath], files: includes)
+        includes[filepath] = parsedInclude.code
+
+    callback null, includes
 
 # Compile all layouts and return
-getRawLayouts = (config) ->
+getRawLayouts = (config, callback) ->
   layoutDir = path.join config.source, config.layout
 
   fileData = {}
@@ -453,7 +459,35 @@ getRawLayouts = (config) ->
     continue if name of layoutContents
     layoutContents[name] = loadLayout name, content
 
-  return layoutContents
+  callback null, layoutContents
+
+setupCustomTags = (config) ->
+  customTags = {}
+  for tagName, fn of config.tags
+    do (tagName, fn) ->
+      customTags[tagName] = (words, line, context, methods) ->
+        # Call the plugin function using a much simpler API
+        result = fn words, site
+
+        # Tinyliquid custom tags are a little complex and not very well
+        # documented. The output of this function is ultimately evaluated as a
+        # script. For now, restrict the custom tag model here to be someting
+        # very simple -- outputting a string only. This means we don't support
+        # start & end tags for now.
+
+        # Escape the content first
+        result = result.replace '\\', '\\\\'
+        result = result.replace /"/img, '\\"'
+        # Join lines appropriately
+        sanitized = []
+        for line in result.split '\n'
+          sanitized.push "\"#{line}\""
+
+        return """$_buf += #{sanitized.join '+ "\n" + '} """
+
+      return
+
+  customTags
 
 # Find all directories named _posts for inclusion
 getPostDirectories = (config) ->
@@ -475,7 +509,7 @@ getPostDirectories = (config) ->
 
 # Get all posts
 postMask = /^(\d{4})-(\d{2})-(\d{2})-(.+)\.(md|markdown|mdown|html|textile)$/
-getPosts = (config) ->
+getPosts = (config, callback) ->
   postDirs = getPostDirectories(config)
   posts = []
   permalinks = {}
@@ -533,9 +567,9 @@ getPosts = (config) ->
   posts.first = posts[0]
   posts.last = posts[posts.length - 1]
 
-  posts
+  callback null, posts
 
-getPagesAndStaticFiles = (config) ->
+getPagesAndStaticFiles = (config, callback) ->
   pages = []
   static_files = []
 
@@ -573,7 +607,7 @@ getPagesAndStaticFiles = (config) ->
       else
         static_files.push filepath
 
-  { pages, static_files }
+  callback null, { pages, static_files }
 
 # Get the frontmatter plus content of a file
 getDataAndContent = (filepath) ->
