@@ -123,7 +123,7 @@ begin = (config) ->
 
   generate config, (err) ->
     if err
-      console.error err
+      console.error err.toString().red
       process.exit -1
 
     console.log "Successfully generated site: ".green +
@@ -240,7 +240,8 @@ generate = (config, callback) ->
     try
       layouts[name] = tinyliquid.compile content, liquidOptions
     catch err
-      console.error "Error while compiling layout: #{name}"
+      console.error "Error while compiling layout: #{name}".red
+      console.error err.toString()
 
   # Run generators
   async.forEachSeries(
@@ -269,7 +270,7 @@ writePage = (page, site, layouts, liquidOptions, callback) ->
       site.config.filters
     )
   catch err
-    console.error "Error while processing page: #{page.url}"
+    console.error "Error while processing page: #{page.url}".red
     callback()
 
   # Run conversion
