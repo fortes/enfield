@@ -107,6 +107,7 @@ begin = (config) ->
   config.filters = {}
   config.filters[key] = tinyliquid.filters[key] for key of tinyliquid.filters
 
+  config.tags = []
   config.converters = []
   config.generators = []
 
@@ -174,9 +175,10 @@ generateDebounced = (config, callback) ->
   return
 
 generate = (config, callback) ->
-  { layouts, includes } = getLayoutsAndIncludes config
-
   console.log "Building site: #{config.source} -> #{config.destination}"
+
+  includes = getIncludes config
+  rawLayouts = getRawLayouts config
 
   posts = getPosts config
   {pages, static_files} = getPagesAndStaticFiles config
@@ -190,10 +192,11 @@ generate = (config, callback) ->
     posts: posts
     pages: pages
     static_files: static_files
+    tags: {}
+    categories: {}
 
   # Setup tags & categories for posts
   for type in ['tags', 'categories']
-    site[type] = {}
     for post in posts
       continue unless config.future or post.published
       if post[type]
@@ -201,9 +204,40 @@ generate = (config, callback) ->
           site[type][val] or= { name: val, posts: [] }
           site[type][val].posts.push post
 
+  # Setup custom tags
+  customTags = {}
+  for tagName, fn of config.tags
+    do (tagName, fn) ->
+      customTags[tagName] = (words, line, context, methods) ->
+        # Call the plugin function using a much simpler API
+        result = fn words, site
+
+        # Tinyliquid custom tags are a little complex and not very well
+        # documented. The output of this function is ultimately evaluated as a
+        # script. For now, restrict the custom tag model here to be someting
+        # very simple -- outputting a string only. This means we don't support
+        # start & end tags for now.
+
+        # Escape the content first
+        result = result.replace '\\', '\\\\'
+        result = result.replace /"/img, '\\"'
+        # Join lines appropriately
+        sanitized = []
+        for line in result.split '\n'
+          sanitized.push "\"#{line}\""
+
+        return """$_buf += #{sanitized.join '+ "\n" + '} """
+
+      return
+
   liquidOptions =
-    files: includes
     original: true
+    files: includes
+    tags: customTags
+
+  layouts = {}
+  for name, content of rawLayouts
+    layouts[name] = tinyliquid.compile load(name, content), liquidOptions
 
   # Run generators
   async.forEachSeries(
@@ -319,6 +353,9 @@ loadPlugins = (config, pluginDir) ->
       if plugin.filters
         for key, filter of plugin.filters
           config.filters[key] = filter
+      if plugin.tags
+        for key, tag of plugin.tags
+          config.tags[key] = tag
       if plugin.converters
         for key, converter of plugin.converters
           config.converters.push converter
@@ -328,9 +365,7 @@ loadPlugins = (config, pluginDir) ->
 
   return
 
-# Compile all layouts and return
-getLayoutsAndIncludes = (config) ->
-  layoutDir = path.join config.source, config.layout
+getIncludes = (config) ->
   includesDir = path.join config.source, '_includes'
 
   includes = {}
@@ -342,6 +377,12 @@ getLayoutsAndIncludes = (config) ->
       else
         includes[file] = fs.readFileSync(filepath).toString()
 
+  includes
+
+# Compile all layouts and return
+getRawLayouts = (config) ->
+  layoutDir = path.join config.source, config.layout
+
   fileData = {}
   fileContents = {}
   for file in fs.readdirSync layoutDir
@@ -350,11 +391,9 @@ getLayoutsAndIncludes = (config) ->
     fileData[name] = data
     fileContents[name] = content
 
-  liquidOptions =
-    files: includes
-    original: true
-
-  # Helper for moving up dependency chain of layouts
+  # Helper for applying layout to layouts. In this case, we only want to
+  # substitute the {{ content }} portion of the layout, and leave the rest of
+  # the liquid directives for later.
   layoutContents = {}
   load = (name, content) ->
     unless name of layoutContents
@@ -366,11 +405,7 @@ getLayoutsAndIncludes = (config) ->
 
     layoutContents[name]
 
-  layouts = {}
-  for name, content of fileContents
-    layouts[name] = tinyliquid.compile load(name, content), liquidOptions
-
-  { layouts, includes }
+  return layoutContents
 
 # Find all directories named _posts for inclusion
 getPostDirectories = (config) ->

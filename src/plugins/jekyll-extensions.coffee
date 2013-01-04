@@ -47,3 +47,17 @@ module.exports =
           "#{array.slice(0, len-1).join ', '}, #{connector} #{array[len - 1]}"
     # textilize
     # markdownify
+  tags:
+    post_url: (tokens, site) ->
+      # Must have a post name
+      if tokens.length > 0
+        match = tokens[0].match /^(\d{4})-(\d{2})-(\d{2})-(.+)$/
+        if match
+          [_, year, month, day, slug] = match
+          date = new Date(year, month - 1, day)
+          for post in site.posts
+            if (slug is post.slug) and (post.date.getTime() is date.getTime())
+              return post.url
+
+      console.error "Error: post_url #{tokens[0]} could not be found"
+      return '#'

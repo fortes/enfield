@@ -83,6 +83,21 @@ module.exports = {
 }
 ```
 
+### Custom Tags
+
+```js
+module.exports = {
+  "tags": {
+    "mytag": function(tokens, site) {
+      // Tokens is an array of arguments passed within the tag
+      // Site is the same data structure passed to liquid templates
+      // (see generators below)
+      return "Hello World";
+    }
+  }
+}
+```
+
 ### Generators
 
 Generators are used to create additional content for your site based on custom logic.
@@ -108,6 +123,12 @@ module.exports = {
 See `src/plugins/enfield-generators.coffee` for examples.
 
 ## Changelog
+
+### Version 0.3.0 (in progress)
+
+- Initial support for custom tag plugins
+- Add support for `post_url` included in Jekyll
+- Textile support via bundled plugin
 
 ### Version 0.2.1
 
