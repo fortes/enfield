@@ -237,7 +237,7 @@ generate = (config, callback) ->
 
   layouts = {}
   for name, content of rawLayouts
-    layouts[name] = tinyliquid.compile load(name, content), liquidOptions
+    layouts[name] = tinyliquid.compile content, liquidOptions
 
   # Run generators
   async.forEachSeries(
@@ -395,15 +395,19 @@ getRawLayouts = (config) ->
   # substitute the {{ content }} portion of the layout, and leave the rest of
   # the liquid directives for later.
   layoutContents = {}
-  load = (name, content) ->
+  loadLayout = (name, content) ->
     unless name of layoutContents
       if layout = fileData[name]?.layout
-        layout = load layout, fileContents[layout]
+        layout = loadLayout layout, fileContents[layout]
         content = layout.replace /\{\{\s*content\s*\}\}/, content
 
       layoutContents[name] = content
 
     layoutContents[name]
+
+  for name, content of fileContents
+    continue if name of layoutContents
+    layoutContents[name] = loadLayout name, content
 
   return layoutContents
 
