@@ -131,8 +131,9 @@ begin = (config) ->
       "#{path.resolve config.source} -> #{config.destination}".green
 
     if config.auto
-      console.log "Auto-regenerating enabled".green +
-        " #{config.source} -> #{config.destination}".green
+      unless config.server
+        console.log "Auto-regenerating enabled".green +
+          " #{config.source} -> #{config.destination}".green
       # Avoid infinite refreshing from watching the output directory
       realDestination = path.resolve config.destination
       fileFilter = (f) ->
