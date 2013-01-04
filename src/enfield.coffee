@@ -15,7 +15,7 @@ configReader = require './config'
 CONFIG_FILENAME = '_config.yml'
 
 module.exports =
-  version: '0.2.1'
+  version: '0.3.0'
   main: (argv) ->
     optimist = require('optimist')
       .usage("""Enfield is a static-site generator modeled after Jekyll
@@ -391,7 +391,7 @@ getPostDirectories = (config) ->
   dirs
 
 # Get all posts
-postMask = /^(\d{4})-(\d{2})-(\d{2})-(.+)\.(md|markdown|html)$/
+postMask = /^(\d{4})-(\d{2})-(\d{2})-(.+)\.(md|markdown|html|textile)$/
 getPosts = (config) ->
   postDirs = getPostDirectories(config)
   posts = []
@@ -478,7 +478,7 @@ getPagesAndStaticFiles = (config) ->
         page.published = if 'published' of data then data.published else true
 
         basename = path.basename filepath, ext
-        if basename is 'index' and (ext is '.md' or ext is '.html')
+        if basename is 'index' and /^\.(md|markdown|textile|html)$/.test ext
           basename = ''
         page.url = "/#{path.join path.dirname(filepath), basename}"
         # Special case
