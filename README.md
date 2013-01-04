@@ -153,7 +153,6 @@ See `src/plugins/enfield-generators.coffee` for examples.
 
 ## TODO
 
-* Support some form of post pagination
 * Consider configurable permalinks
 * Post index page for year directories
 * Proper include support (nesting)
