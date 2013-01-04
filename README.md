@@ -26,9 +26,10 @@ Usage:
   enfield post [title]             # Create a new page
 
 Options:
-  --auto           Auto-regenerate
-  --server [PORT]  Start a web server (default port 4000)
-  --url [URL]      Set custom site.url
+  --auto            Auto-regenerate
+  --server [PORT]   Start a web server (default port 4000)
+  --base-url [URL]  Serve website from a give base URL
+  --url [URL]       Set custom site.url
 ```
 
 ## Plugins
@@ -107,6 +108,12 @@ module.exports = {
 See `src/plugins/enfield-generators.coffee` for examples.
 
 ## Changelog
+
+### Version 0.2.1
+
+- Make files with DOS line endings work
+- Add support for `site.url` and `site.baseurl` properties from command-line
+- Support setting post categories via directory structure like Jekyll
 
 ### Version 0.2.0
 
