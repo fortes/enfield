@@ -203,6 +203,11 @@ generate = (config, callback) ->
         tags: {}
         categories: {}
 
+      # Add in custom variables from config
+      for key, val of config
+        if key not in ['tags', 'converters', 'filters']
+          site[key] = val
+
       # Setup tags & categories for posts
       for type in ['tags', 'categories']
         for post in posts
