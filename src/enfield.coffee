@@ -363,7 +363,7 @@ getIncludes = (config, callback) ->
   includesDir = path.join config.source, '_includes'
 
   unless fs.existsSync includesDir
-    return {}
+    return callback null, {}
 
   # Grab the plain contents of all files, including within subdirectories
   contents = {}
