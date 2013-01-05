@@ -4,6 +4,7 @@ coffee = require 'coffee-script'
 fs = require 'fs-extra'
 less = require 'less'
 uglify = require 'uglify-js'
+path = require 'path'
 
 createRedirectHTML = (page) ->
   url = page.url
@@ -76,8 +77,18 @@ module.exports =
         (filepath, cb) ->
           fs.readFile filepath, (err, contents) ->
             if err then return cb err
+
+            options =
+              compress: true
+              # For relative includes
+              paths: [path.dirname filepath]
+
             # Render CSS
-            less.render contents.toString(), { compress:true }, (err, css) ->
+            less.render contents.toString(), options, (err, css) ->
+              if err
+                console.error "LESS Compilation Error: #{err.message}".red
+                return cb()
+
               outPath = filepath.replace /\.less$/, ''
               site.pages.push {
                 published: true
