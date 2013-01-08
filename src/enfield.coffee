@@ -438,6 +438,10 @@ getIncludes = (config, callback) ->
 getRawLayouts = (config, callback) ->
   layoutDir = path.join config.source, config.layout
 
+  unless fs.existsSync layoutDir
+    console.error "Error: Missing _layouts directory".red
+    process.exit -1
+
   fileData = {}
   fileContents = {}
   for file in fs.readdirSync layoutDir
