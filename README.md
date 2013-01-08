@@ -43,7 +43,7 @@ Options:
 
 ## Plugins
 
-Enfield will load any `.coffee` or `.js` file from the `\_plugins` directory. The plugin system is modeled after [Jekyll Plugins](https://github.com/mojombo/jekyll/wiki/Plugins). However, the following plugin types are supported:
+Enfield will load any `.coffee` or `.js` file from the `_plugins` directory. The plugin system is modeled after [Jekyll Plugins](https://github.com/mojombo/jekyll/wiki/Plugins). However, the following plugin types are supported:
 
 * Converters
 * Liquid Filters
@@ -137,7 +137,7 @@ See `src/plugins/enfield-generators.coffee` for examples.
 
 - Initial support for custom tag plugins
 - Support Jekyll-style pagination
-- Add support for `post\_url` included in Jekyll
+- Add support for `post_url` included in Jekyll
 - Textile support via bundled plugin
 - Make nested includes actually work
 - Includes can be markdown, textile, etc
