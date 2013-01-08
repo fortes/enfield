@@ -10,7 +10,7 @@ Core functionality is identical to Jekyll:
 * Compatible with the Jeykll directory and file structure
 * Use Markdown or Textile for posts
 * Layouts written using liquid template engine
-* Server / Auto-regenrate
+* Server / Auto-regenerate
 
 There are a few bonus features not present in the default install of Jekyll:
 
