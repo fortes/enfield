@@ -17,6 +17,7 @@ There are a few bonus features not present in the default install of Jekyll:
 * Jekyll-like plugin model, with CoffeeScript/JS instead of Ruby
 * Use markdown/textile within includes
 * Compile and minify CoffeeScript & LESS
+* Support post and page URL aliases via redirects
 
 ## Usage
 
