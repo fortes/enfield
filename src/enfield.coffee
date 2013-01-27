@@ -217,7 +217,7 @@ generate = (config, callback) ->
               site[type][val] or= { name: val, posts: [] }
               site[type][val].posts.push post
 
-      customTags = setupCustomTags config
+      customTags = setupCustomTags config, site
 
       liquidOptions =
         files: includes
@@ -262,7 +262,7 @@ writePage = (page, site, layouts, liquidOptions, callback) ->
     )
   catch err
     console.error "Error while processing page: #{page.url}".red
-    callback()
+    callback err
 
   # Run conversion
   convertContent page.ext, content, site.config.converters, (err, res) ->
@@ -470,7 +470,7 @@ getRawLayouts = (config, callback) ->
 
   callback null, layoutContents
 
-setupCustomTags = (config) ->
+setupCustomTags = (config, site) ->
   customTags = {}
   for tagName, fn of config.tags
     do (tagName, fn) ->
