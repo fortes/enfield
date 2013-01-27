@@ -478,21 +478,8 @@ setupCustomTags = (config) ->
         # Call the plugin function using a much simpler API
         result = fn words, site
 
-        # Tinyliquid custom tags are a little complex and not very well
-        # documented. The output of this function is ultimately evaluated as a
-        # script. For now, restrict the custom tag model here to be someting
-        # very simple -- outputting a string only. This means we don't support
-        # start & end tags for now.
-
-        # Escape the content first
-        result = result.replace '\\', '\\\\'
-        result = result.replace /"/img, '\\"'
-        # Join lines appropriately
-        sanitized = []
-        for line in result.split '\n'
-          sanitized.push "\"#{line}\""
-
-        return """$_buf += #{sanitized.join '+ "\n" + '} """
+        # Use tinyliquid helper method to output HTML
+        return methods.printString result
 
       return
 
