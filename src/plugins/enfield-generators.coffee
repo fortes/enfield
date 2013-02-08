@@ -51,17 +51,20 @@ module.exports =
         if /\.coffee$/.test filepath
           # Compile and minify
           fileContents = fs.readFileSync(filepath).toString()
-          compiled = coffee.compile fileContents
-          minified = uglify compiled
+          try
+            compiled = coffee.compile fileContents
+            minified = uglify compiled
 
-          # Output
-          outPath = filepath.replace /\.coffee$/, ''
-          site.pages.push {
-            published: true
-            url: outPath
-            raw_content: minified
-            ext: '.js'
-          }
+            # Output
+            outPath = filepath.replace /\.coffee$/, ''
+            site.pages.push {
+              published: true
+              url: outPath
+              raw_content: minified
+              ext: '.js'
+            }
+          catch err
+            console.error "CoffeeScript Compilation Error: #{err.message}".red
 
       callback()
 
