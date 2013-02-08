@@ -69,7 +69,7 @@ module.exports =
       # As in Jekyll, pagination only works in index.html files
       for page in site.pages
         # Only paginate at root
-        unless (page.ext is '.html') and (page.url is '/')
+        unless (page.url is '/')
           continue
 
         page_number = 1

@@ -269,7 +269,7 @@ writePage = (page, site, layouts, liquidOptions, callback) ->
         {
           site
           page
-          paginator: page.paginator
+          paginator: page.paginator or {}
         }
         site.config.filters
       )
