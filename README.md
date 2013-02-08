@@ -141,7 +141,9 @@ See `src/plugins/enfield-generators.coffee` for examples.
 - Add support for `post_url` included in Jekyll
 - Textile support via bundled plugin
 - Make nested includes actually work
-- Includes can be markdown, textile, etc
+- Use pygments for code highlighting
+- Includes can use markdown
+- Removed Textile support (need to find a better library)
 
 ### Version 0.2.1
 
