@@ -36,8 +36,7 @@ module.exports =
         if err then return callback err
         # Now replace each instance
         i = -1
-        converted = html.replace regex, (match) ->
+        callback null, html.replace regex, (match) ->
           i += 1
           return results[i]
-        callback null, converted
     )

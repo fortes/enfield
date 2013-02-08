@@ -240,7 +240,8 @@ generate = (config, callback) ->
           # Write content to disk
           async.series(
             [
-              (cb) -> writePostsAndPages site, layouts, liquidOptions, cb
+              (cb) -> writePages site.posts, site, layouts, liquidOptions, cb
+              (cb) -> writePages site.pages, site, layouts, liquidOptions, cb
               (cb) -> writeStaticFiles site, cb
             ]
             callback
@@ -254,22 +255,27 @@ writePage = (page, site, layouts, liquidOptions, callback) ->
   # Respect published flag
   return callback() unless site.config.future or page.published
 
-  # Content can contain liquid directives, process now
-  try
-    content = tinyliquid.compile(page.raw_content, liquidOptions)(
-      { site, page, paginator: page.paginator }
-      site.config.filters
-    )
-  catch err
-    console.error "Error while processing page: #{page.url}".red
-    callback err
+  {ext, raw_content} = page
 
   # Run conversion
-  convertContent page.ext, content, site.config.converters, (err, res) ->
+  convertContent ext, raw_content, site.config.converters, (err, res) ->
     if err then return callback err
 
-    page.content = res.content
     {ext} = res
+
+    # Content can contain liquid directives, process now
+    try
+      page.content = tinyliquid.compile(res.content, liquidOptions)(
+        {
+          site
+          page
+          paginator: page.paginator
+        }
+        site.config.filters
+      )
+    catch err
+      console.error "Error while processing page: #{page.url}".red
+      return callback err
 
     # Apply layout, if it exists
     if page.layout and page.layout of layouts
@@ -295,10 +301,10 @@ writePage = (page, site, layouts, liquidOptions, callback) ->
     return
   return
 
-writePostsAndPages = (site, layouts, liquidOptions, callback) ->
+writePages = (pages, site, layouts, liquidOptions, callback) ->
   # Write out pages and posts in parallel
   async.forEachLimit(
-    site.posts.concat(site.pages)
+    pages
     5
     (page, cb) -> writePage page, site, layouts, liquidOptions, cb
     callback
