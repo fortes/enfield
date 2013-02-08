@@ -504,7 +504,7 @@ getPostDirectories = (config) ->
   dirs
 
 # Get all posts
-postMask = /^(\d{4})-(\d{2})-(\d{2})-(.+)\.(md|markdown|mdown|html|textile)$/
+postMask = /^(\d{4})-(\d{2})-(\d{2})-(.+)\.(md|markdown|mdown|html)$/
 getPosts = (config, callback) ->
   postDirs = getPostDirectories(config)
   posts = []
@@ -591,7 +591,7 @@ getPagesAndStaticFiles = (config, callback) ->
         page.published = if 'published' of data then data.published else true
 
         basename = path.basename filepath, ext
-        if basename is 'index' and /^\.(md|markdown|mdown|textile|html)$/.test ext
+        if basename is 'index' and /^\.(md|markdown|mdown|html)$/.test ext
           basename = ''
         page.url = "/#{path.join path.dirname(filepath), basename}"
         # Special case
