@@ -8,14 +8,15 @@ Core functionality is identical to Jekyll:
 
 * Blog aware static site generator
 * Compatible with the Jeykll directory and file structure
-* Use Markdown or Textile for posts
+* Use Markdown for posts (Textile not supported yet)
+* Code highlighting via Pygments
 * Layouts written using liquid template engine
 * Server / Auto-regenerate
 
 There are a few bonus features not present in the default install of Jekyll:
 
 * Jekyll-like plugin model, with CoffeeScript/JS instead of Ruby
-* Use markdown/textile within includes
+* Use markdown within includes
 * Compile and minify CoffeeScript & LESS
 * Support post and page URL aliases via redirects
 
@@ -44,7 +45,7 @@ Options:
 
 ## Plugins
 
-Enfield will load any `.coffee` or `.js` file from the `_plugins` directory. The plugin system is modeled after [Jekyll Plugins](https://github.com/mojombo/jekyll/wiki/Plugins). However, the following plugin types are supported:
+Enfield will load any `.coffee` or `.js` file from the `_plugins` directory. The plugin system is modeled after [Jekyll Plugins](https://github.com/mojombo/jekyll/wiki/Plugins). The following plugin types are supported:
 
 * Converters
 * Liquid Filters
