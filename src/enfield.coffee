@@ -263,6 +263,12 @@ writePage = (page, site, layouts, liquidOptions, callback) ->
 
     {ext} = res
 
+    if ext is '.html'
+      outputPath = path.join site.config.destination, page.url, 'index.html'
+    else
+      page.url += ext
+      outputPath = path.join site.config.destination, page.url
+
     # Content can contain liquid directives, process now
     try
       page.content = tinyliquid.compile(res.content, liquidOptions)(
@@ -284,15 +290,10 @@ writePage = (page, site, layouts, liquidOptions, callback) ->
         content: page.content
         site: site
         page: page
+        paginator: page.paginator or {}
       }, site.config.filters
     else
       rendered = page.content
-
-    if ext is '.html'
-      outputPath = path.join site.config.destination, page.url, 'index.html'
-    else
-      page.url += ext
-      outputPath = path.join site.config.destination, page.url
 
     # Write file
     fs.mkdirsSync path.dirname outputPath
