@@ -446,8 +446,9 @@ getRawLayouts = (config, callback) ->
   layoutDir = path.join config.source, config.layout
 
   unless fs.existsSync layoutDir
-    console.error "Error: Missing _layouts directory".red
-    process.exit -1
+    console.warn "Warning: Missing _layouts directory".yellow
+    callback null, {}
+    return
 
   fileData = {}
   fileContents = {}
