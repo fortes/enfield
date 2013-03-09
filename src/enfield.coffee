@@ -625,7 +625,10 @@ getDataAndContent = (filepath) ->
       break if /^---\s?$/.test currentLine
       frontMatter.push currentLine
 
-    data = yaml.load frontMatter.join "\n"
+    if frontMatter.length
+      data = yaml.load frontMatter.join "\n"
+    else
+      data = {}
 
   data: data
   content: lines.join "\n"
