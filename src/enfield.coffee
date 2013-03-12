@@ -100,6 +100,18 @@ Usage:
         if args.url
           config.url = args.url
 
+        # Convert permalink style shortcuts to full style
+        if config.permalink is 'date' or not config.permalink
+          config.permalink = '/:categories/:year/:month/:day/:title.html'
+        else if config.permalink is 'pretty'
+          config.permalink = '/:categories/:year/:month/:day/:title/'
+        else if config.permalink is 'none'
+          config.permalink = '/:categories/:title.html'
+
+        # Append '/' if there is no file extension
+        if path.extname(config.permalink) is ''
+          config.permalink += '/'
+
         begin config
 
 # Workhorse function
@@ -269,8 +281,13 @@ writePage = (page, site, layouts, liquidOptions, callback) ->
     # Make sure to write out directory indexes properly
     if ((ext is '.html') and site.config.pretty_urls) or /\/$/.test(page.url)
       outputPath = path.join site.config.destination, page.url, 'index.html'
+      # Make sure urls end with a slash
+      unless /\/$/.test page.url
+        page.url += '/'
     else
-      page.url += ext
+      # Add extension only if not present from permalink settings
+      if path.extname(page.url) is ''
+        page.url += ext
       outputPath = path.join site.config.destination, page.url
 
     # Content can contain liquid directives, process now
@@ -535,9 +552,6 @@ getPosts = (config, callback) ->
       post.date = new Date match[1], match[2] - 1, match[3]
       post.slug = match[4]
       post.published = if 'published' of data then data.published else true
-      post.id = post.url = "/#{post.date.getFullYear()}/#{post.slug}"
-      if post.url of permalinks
-        console.error "Repeated permalink #{post.url}".red
       permalinks[post.url] = true
       post.ext = ext
       if post.tags and typeof post.tags is 'string'
@@ -554,6 +568,11 @@ getPosts = (config, callback) ->
           post.categories.concat dirCats
         else
           dirCats
+
+      # Generate permalink based on rules
+      post.id = post.url = getPermalink post, config.permalink
+      if post.url of permalinks
+        console.error "Repeated permalink #{post.url}".red
 
       posts.push post
 
@@ -637,6 +656,17 @@ getDataAndContent = (filepath) ->
   data: data
   content: lines.join "\n"
   ext: path.extname filepath
+
+getPermalink = (post, style) ->
+  return style
+    .replace(':year', post.date.getFullYear())
+    .replace(':month', pad post.date.getMonth() + 1)
+    .replace(':day', pad post.date.getDate())
+    .replace(':title', post.slug)
+    .replace(':categories', if post.categories then post.categories.join '/' else '')
+    .replace(':i_month', post.date.getMonth + 1)
+    .replace(':i_day', post.date.getDate())
+    .replace('//', '/')
 
 convertContent = (ext, content, converters, callback) ->
   for converter in converters

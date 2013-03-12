@@ -19,7 +19,7 @@ DEFAULTS =
   #lsi: false
   #pygments: false
   #markdown: 'maruku'
-  #permalink: ':year/:title'
+  permalink: 'date'
   include: ['.htaccess']
   exclude: ['README.md']
   pretty_urls: false

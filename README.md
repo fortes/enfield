@@ -146,6 +146,7 @@ See `src/plugins/enfield-generators.coffee` for examples.
 - Use pygments for code highlighting
 - Includes can use markdown
 - Removed Textile support (need to find a better library)
+- Support the `permalink` config property to match Jekyll's permalink paths
 - Add `pretty_urls` config variable for `.html`-less URLs everywhere
 
 ### Version 0.2.1
