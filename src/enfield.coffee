@@ -178,6 +178,9 @@ generateDebounced = (config, callback) ->
 
 generate = (config, callback) ->
   console.log "Building site: #{config.source} -> #{config.destination}"
+  # Mimic Jekyll behavior by clearing out the destination directory on
+  # generation
+  fs.removeSync config.destination
 
   # Kick everything off in parallel
   async.parallel(
