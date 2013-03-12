@@ -22,6 +22,7 @@ DEFAULTS =
   #permalink: ':year/:title'
   include: ['.htaccess']
   exclude: ['README.md']
+  pretty_urls: false
   #paginate_path: 'page:num'
 
   # markdown_ext: 'markdown,mkd,mkdn,md'

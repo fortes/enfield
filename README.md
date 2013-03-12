@@ -19,6 +19,7 @@ There are a few bonus features not present in the default install of Jekyll:
 * Use markdown within includes
 * Compile and minify CoffeeScript & LESS
 * Support post and page URL aliases via redirects
+* Extension-less page URLs (i.e. `/example/` from `/example.html` via `pretty_urls` configuration variable)
 
 ## Usage
 
@@ -145,6 +146,7 @@ See `src/plugins/enfield-generators.coffee` for examples.
 - Use pygments for code highlighting
 - Includes can use markdown
 - Removed Textile support (need to find a better library)
+- Add `pretty_urls` config variable for `.html`-less URLs everywhere
 
 ### Version 0.2.1
 

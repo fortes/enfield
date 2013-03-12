@@ -263,7 +263,8 @@ writePage = (page, site, layouts, liquidOptions, callback) ->
 
     {ext} = res
 
-    if ext is '.html'
+    # Make sure to write out directory indexes properly
+    if ((ext is '.html') and site.config.pretty_urls) or /\/$/.test(page.url)
       outputPath = path.join site.config.destination, page.url, 'index.html'
     else
       page.url += ext
@@ -600,10 +601,10 @@ getPagesAndStaticFiles = (config, callback) ->
 
         basename = path.basename filepath, ext
         if basename is 'index' and /^\.(md|markdown|mdown|html)$/.test ext
-          basename = ''
+          basename = '/'
         page.url = "/#{path.join path.dirname(filepath), basename}"
-        # Special case
-        if page.url is '/.'
+        # Special case for root
+        if page.url is '/./'
           page.url = '/'
 
         # Add to collection
