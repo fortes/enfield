@@ -639,6 +639,7 @@ getPagesAndStaticFiles = (config, callback) ->
 # Get the frontmatter plus content of a file
 getDataAndContent = (filepath) ->
   lines = fs.readFileSync(filepath).toString().split(/\r\n|\n|\r/)
+  data = {}
   if /^---\s?$/.test lines[0]
     lines.shift()
     frontMatter = []
@@ -650,8 +651,9 @@ getDataAndContent = (filepath) ->
 
     if frontMatter.length
       data = yaml.load frontMatter.join "\n"
-    else
-      data = {}
+      # Yaml sometimes returns non-objects
+      if typeof data isnt 'object'
+        data = { value: data }
 
   data: data
   content: lines.join "\n"
