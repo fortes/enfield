@@ -156,7 +156,13 @@ begin = (config) ->
         if typeof f is 'object' and curr is null and prev is null
           # Finished walking tree, ignore
           return
-        else if prev is null
+
+        # Ignore files within destination directory
+        fullPath = path.resolve f
+        if fullPath.substr(0, realDestination.length) is realDestination
+          return
+
+        if prev is null
           # New file
           generateDebounced config, ->
             console.log 'Updated due to new file'
