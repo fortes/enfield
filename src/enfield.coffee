@@ -170,8 +170,7 @@ begin = (config) ->
       if config.server
         fileServer = new(node_static.Server)(config.destination)
         server = http.createServer (request, response) ->
-          request.addListener 'end', ->
-            fileServer.serve request, response
+          fileServer.serve request, response
         server.listen config.server_port
         console.log "Running server at http://localhost:#{config.server_port}"
 
