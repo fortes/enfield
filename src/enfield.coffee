@@ -76,14 +76,16 @@ Usage:
       else # Default is to generate
         # One argument specifies just the destination
         if remainderArgs.length is 1
-          destination = remainderArgs[0]
+          destination = path.resolve remainderArgs[0]
         # Two arguments means source and destination
         else if remainderArgs.length is 2
-          source = remainderArgs[0]
-          destination = remainderArgs[1]
+          source = path.resolve remainderArgs[0]
+          destination = path.resolve remainderArgs[1]
 
+        # Move into source directory
+        process.chdir source
         # Load configuration
-        config = configReader.getConfig(path.join source, CONFIG_FILENAME)
+        config = configReader.getConfig CONFIG_FILENAME
         # Override config with passed variables
         if destination
           config.destination = destination
