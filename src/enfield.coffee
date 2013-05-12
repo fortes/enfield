@@ -483,6 +483,7 @@ getRawLayouts = (config, callback) ->
   for file in fs.readdirSync layoutDir
     name = path.basename file, path.extname file
     { data, content } = getDataAndContent path.join(layoutDir, file)
+    data or= {}
     fileData[name] = data
     fileContents[name] = content
 
@@ -553,6 +554,7 @@ getPosts = (config, callback) ->
 
       {data, content, ext} = getDataAndContent path.join postDir, filename
 
+      data or= {}
       post = { raw_content: content, ext }
       post[key] = data[key] for key of data
 
@@ -645,8 +647,8 @@ getPagesAndStaticFiles = (config, callback) ->
 
 # Get the frontmatter plus content of a file
 getDataAndContent = (filepath) ->
-  lines = fs.readFileSync(filepath).toString().split(/\r\n|\n|\r/)
-  data = {}
+  content = fs.readFileSync(filepath).toString()
+  lines = content.split(/\r\n|\n|\r/)
   if /^---\s?$/.test lines[0]
     lines.shift()
     frontMatter = []
@@ -663,7 +665,7 @@ getDataAndContent = (filepath) ->
         data = { value: data }
 
   data: data
-  content: lines.join "\n"
+  content: if data then lines.join("\n") else content
   ext: path.extname filepath
 
 getPermalink = (post, style) ->
