@@ -76,14 +76,16 @@ Usage:
       else # Default is to generate
         # One argument specifies just the destination
         if remainderArgs.length is 1
-          destination = remainderArgs[0]
+          destination = path.resolve remainderArgs[0]
         # Two arguments means source and destination
         else if remainderArgs.length is 2
-          source = remainderArgs[0]
-          destination = remainderArgs[1]
+          source = path.resolve remainderArgs[0]
+          destination = path.resolve remainderArgs[1]
 
+        # Move into source directory
+        process.chdir source
         # Load configuration
-        config = configReader.getConfig(path.join source, CONFIG_FILENAME)
+        config = configReader.getConfig CONFIG_FILENAME
         # Override config with passed variables
         if destination
           config.destination = destination
@@ -154,7 +156,13 @@ begin = (config) ->
         if typeof f is 'object' and curr is null and prev is null
           # Finished walking tree, ignore
           return
-        else if prev is null
+
+        # Ignore files within destination directory
+        fullPath = path.resolve f
+        if fullPath.substr(0, realDestination.length) is realDestination
+          return
+
+        if prev is null
           # New file
           generateDebounced config, ->
             console.log 'Updated due to new file'
@@ -170,8 +178,7 @@ begin = (config) ->
       if config.server
         fileServer = new(node_static.Server)(config.destination)
         server = http.createServer (request, response) ->
-          request.addListener 'end', ->
-            fileServer.serve request, response
+          fileServer.serve request, response
         server.listen config.server_port
         console.log "Running server at http://localhost:#{config.server_port}"
 
@@ -639,6 +646,7 @@ getPagesAndStaticFiles = (config, callback) ->
 # Get the frontmatter plus content of a file
 getDataAndContent = (filepath) ->
   lines = fs.readFileSync(filepath).toString().split(/\r\n|\n|\r/)
+  data = {}
   if /^---\s?$/.test lines[0]
     lines.shift()
     frontMatter = []
@@ -650,8 +658,9 @@ getDataAndContent = (filepath) ->
 
     if frontMatter.length
       data = yaml.load frontMatter.join "\n"
-    else
-      data = {}
+      # Yaml sometimes returns non-objects
+      if typeof data isnt 'object'
+        data = { value: data }
 
   data: data
   content: lines.join "\n"
