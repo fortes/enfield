@@ -138,7 +138,7 @@ begin = (config) ->
 
   generate config, (err) ->
     if err
-      console.error err.toString().red
+      console.error err.message.red
       process.exit -1
 
     console.log "Successfully generated site: ".green +
