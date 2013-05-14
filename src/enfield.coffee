@@ -151,7 +151,7 @@ begin = (config) ->
       # Avoid infinite refreshing from watching the output directory
       realDestination = path.resolve config.destination
       fileFilter = (f) ->
-        path.resolve(f) is realDestination
+        (path.resolve(f) is realDestination) or f[0] is '.'
       watch.watchTree config.source, { filter: fileFilter }, (f, curr, prev) ->
         if typeof f is 'object' and curr is null and prev is null
           # Finished walking tree, ignore
@@ -160,6 +160,10 @@ begin = (config) ->
         # Ignore files within destination directory
         fullPath = path.resolve f
         if fullPath.substr(0, realDestination.length) is realDestination
+          return
+
+        # Ignore files in hidden directory
+        if f[0] is '.'
           return
 
         if prev is null
