@@ -87,18 +87,22 @@ module.exports =
               paths: [path.dirname filepath]
 
             # Render CSS
-            less.render contents.toString(), options, (err, css) ->
-              if err
-                console.error "LESS Compilation Error: #{err.message}".red
-                return cb()
+            try
+              less.render contents.toString(), options, (err, css) ->
+                if err
+                  console.error "LESS Compilation Error: #{err.message}".red
+                  return cb()
 
-              outPath = filepath.replace /\.less$/, ''
-              site.pages.push {
-                published: true
-                url: outPath
-                raw_content: css
-                ext: '.css'
-              }
+                outPath = filepath.replace /\.less$/, ''
+                site.pages.push {
+                  published: true
+                  url: outPath
+                  raw_content: css
+                  ext: '.css'
+                }
+                cb()
+            catch err
+              console.error "LESS Compilation Error: #{err.message}".red
               cb()
         callback
       )
