@@ -20,7 +20,7 @@
     "toposort": "~0.2",
     "uglify-js": "~1.3",
     "uslug": "~1.0",
-    "watch": "~0.5"
+    "gaze": "~0.3.4"
   },
   "engines": {
     "node": ">=0.8"
@@ -33,8 +33,7 @@
   "bugs": {
     "url": "https://github.com/fortes/enfield/issues"
   },
-  "devDependencies": {
-  },
+  "devDependencies": {},
   "bin": {
     "enfield": "./bin/enfield.coffee"
   },

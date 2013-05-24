@@ -6,7 +6,7 @@ tinyliquid = require 'tinyliquid'
 colors = require 'colors'
 yaml = require 'js-yaml'
 node_static = require 'node-static'
-watch = require 'watch'
+gaze = require 'gaze'
 http = require 'http'
 async = require 'async'
 toposort = require 'toposort'
@@ -152,32 +152,22 @@ begin = (config) ->
       realDestination = path.resolve config.destination
       fileFilter = (f) ->
         (path.resolve(f) is realDestination) or f[0] is '.'
-      watch.watchTree config.source, { filter: fileFilter }, (f, curr, prev) ->
-        if typeof f is 'object' and curr is null and prev is null
-          # Finished walking tree, ignore
-          return
+      gaze path.join(config.source, '**/*'), { debounceDelay: 500 }, (err, watcher) ->
+        console.log "Watching for changes"
+        watcher.on 'all', (event, filepath) ->
+          # Ignore any path within the destination directory
+          fullpath = path.resolve filepath
+          relpath = path.relative config.source, filepath
+          return if fullpath.substr(0, realDestination.length) is realDestination
 
-        # Ignore files within destination directory
-        fullPath = path.resolve f
-        if fullPath.substr(0, realDestination.length) is realDestination
-          return
+          # Ignore any path within hidden/ignored directories
+          return if isHidden filepath, config
 
-        # Ignore files in hidden directory
-        if f[0] is '.'
-          return
+          # TODO: Special case _config.yml
+          # TODO: Reload plugins
 
-        if prev is null
-          # New file
+          console.log "#{event} #{relpath}"
           generateDebounced config, ->
-            console.log 'Updated due to new file'
-        else if curr.nlink is 0
-          # Removed file
-          generateDebounced config, ->
-            console.log 'Updated due to removed file'
-        else
-          # File was changed
-          generateDebounced config, ->
-            console.log 'Updated due to changed file'
 
       if config.server
         fileServer = new(node_static.Server)(config.destination)
@@ -193,7 +183,7 @@ wait = (timeout, f) ->
 generateDebounced = (config, callback) ->
   now = Date.now()
   clearTimeout generateTimeoutId
-  generateTimeoutId = wait 100, ->
+  generateTimeoutId = wait 200, ->
     generate config, ->
       lastGenerated = Date.now()
       callback()
