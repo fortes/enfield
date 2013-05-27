@@ -2,6 +2,7 @@
 fs = require 'fs-extra'
 nopt = require 'nopt'
 path = require 'path'
+node_static = require 'node-static'
 
 conf = require './config'
 
@@ -93,9 +94,23 @@ module.exports = exports =
       else
         console.log "New Enfield site installed in #{resolved}"
 
-  build: (config) ->
+  build: (config, callback = ->) ->
+    callback()
 
-  serve: (config) ->
+  serve: (config, callback = ->) ->
+    # Watching happens within the build command
+    exports.build config, (err) ->
+      if err
+        console.error "Could not generate site: #{err.message}"
+        process.exit -1
+
+      fileServer = new(node_static.Server) config.destination
+      server = require('http').createServer (request, response) ->
+        console.info "[#{timestamp()}] #{request.method} #{request.url}"
+        fileServer.serve request, response
+
+      console.log "Running server at http://#{config.host}:#{config.port}"
+      server.listen config.port, config.host
 
   version: ->
     console.log "enfield #{VERSION}"
@@ -103,7 +118,11 @@ module.exports = exports =
   help: ->
     console.log """Enfield is a blog-aware static-site generator modeled after Jekyll """
 
+  DEFAULT_CONFIGURATION: conf.DEFAULTS
+
 printConfiguration = (config) ->
   console.log "Configuration File: #{config.config or 'none'}"
   console.log "            Source: #{config.source}"
   console.log "       Destination: #{config.destination}"
+
+timestamp = -> (new Date).toLocaleTimeString()
