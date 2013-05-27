@@ -2,7 +2,6 @@ fs = require 'fs'
 path = require 'path'
 yaml = require 'js-yaml'
 
-
 module.exports = exports =
   get: (options, callback) ->
     # Start with defaults
@@ -24,17 +23,17 @@ module.exports = exports =
 
           values = yaml.load contents.toString()
           # Use options from config file
-          config[key] = value for key, value of values
+          config = mergeConfig config, values
           # ... and command line
-          config[key] = value for key, value of options
+          config = mergeConfig config, options
 
-          callback null, config
+          callback null, resolveOptions config
       else
         # No config, use defaults with overrides from command line
-        config[key] = value for key, value of options
+        config = mergeConfig config, options
         # Mark config file as not found
         config.config = null
-        callback null, config
+        callback null, resolveOptions config
 
   # Use same defaults as Jekyll, per: http://jekyllrb.com/docs/configuration/
   DEFAULTS:
@@ -73,3 +72,20 @@ module.exports = exports =
     # Enfield-specific
     pretty_urls: false
     config: '_config.yml'
+
+# Override options from one object to another
+mergeConfig = (config, override) ->
+  config[key] = value for key, value of override
+  config
+
+# Resolve shortcut values
+resolveOptions = (config) ->
+  # Convert permalink style shortcuts to full style
+  if config.permalink is 'date' or not config.permalink
+    config.permalink = '/:categories/:year/:month/:day/:title.html'
+  else if config.permalink is 'pretty'
+    config.permalink = '/:categories/:year/:month/:day/:title/'
+  else if config.permalink is 'none'
+    config.permalink = '/:categories/:title.html'
+
+  config
