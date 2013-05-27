@@ -116,7 +116,38 @@ module.exports = exports =
     console.log "enfield #{VERSION}"
 
   help: ->
-    console.log """Enfield is a blog-aware static-site generator modeled after Jekyll """
+    console.log """Enfield is a blog-aware static-site generator modeled after Jekyll
+
+  Commands:
+    build                Build your site
+    doctor               Search site and print specific deprecation warnings
+    help                 Display global or [command] help documentation.
+    import               Import your old blog to Jekyll
+    new                  Creates a new Jekyll site scaffold in PATH
+    serve                Serve your site locally
+
+  Global Options:
+    -s, --source [DIR]
+        Source directory (defaults to ./)
+
+    -d, --destination [DIR]
+        Destination directory (defaults to ./_site)
+
+    --safe
+        Safe mode (defaults to false)
+
+    --plugins PLUGINS_DIR1[,PLUGINS_DIR2[,...]]
+        Plugins directory (defaults to ./_plugins)
+
+    --layouts
+        Layouts directory (defaults to ./_layouts)
+
+    -h, --help
+        Display help documentation
+
+    -v, --version
+        Display version information
+"""
 
   DEFAULT_CONFIGURATION: conf.DEFAULTS
 
