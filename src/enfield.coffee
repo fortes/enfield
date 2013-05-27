@@ -1,4 +1,5 @@
 # Command-line parser / interface
+fs = require 'fs-extra'
 nopt = require 'nopt'
 path = require 'path'
 
@@ -54,7 +55,7 @@ module.exports = exports =
 
         conf.get options, (err, config) ->
           if err
-            console.error "Could not get configuration: %s", err.message
+            console.error "Could not get configuration: #{err.message}"
             process.exit -1
 
           printConfiguration config
@@ -77,16 +78,20 @@ module.exports = exports =
     resolved = path.resolve dir
 
     # Throw error if exists and not empty
-    if fs.existsSync(resolved) and fs.readdirSync(resolved).length
-      console.error "Confict: #{resolved} exists and is not empty"
-      process.exit -1
-
-    # Create directory if doesn't exist
-    fs.mkdirSync resolved
+    if fs.existsSync(resolved)
+      if fs.readdirSync(resolved).length
+        console.error "Confict: #{resolved} exists and is not empty"
+        process.exit -1
+      else
+        # Remove it so we can bulk copy
+        fs.removeSync resolved
 
     # TODO: Copy site_template over
-
-    console.log "New Enfield site installed in #{resolved}"
+    fs.copy path.join(__dirname, '../site_template'), resolved, (err) ->
+      if err
+        console.error "Could not create new site: #{err.message}"
+      else
+        console.log "New Enfield site installed in #{resolved}"
 
   build: (config) ->
 
