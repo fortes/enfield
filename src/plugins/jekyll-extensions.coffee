@@ -46,7 +46,15 @@ module.exports =
     # textilize
     # markdownify
   tags:
-    post_url: (tokens, site) ->
+    highlight: (tokens, page, site) ->
+      console.dir tokens
+      return """<pre><code lang="#{tokens}">"""
+
+    endhighlight: (tokens, page, site) ->
+      console.dir tokens
+      return "</code></pre>"
+
+    post_url: (tokens, page, site) ->
       # Must have a post name
       if tokens.length > 0
         match = tokens[0].match /^(\d{4})-(\d{2})-(\d{2})-(.+)$/

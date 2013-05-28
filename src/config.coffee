@@ -1,6 +1,7 @@
 fs = require 'fs'
 path = require 'path'
 yaml = require 'js-yaml'
+time = require 'time'
 
 module.exports = exports =
   get: (options, callback) ->
@@ -40,7 +41,7 @@ module.exports = exports =
     source: '.'
     destination: './_site'
     plugins: '_plugins'
-    layout: '_layouts'
+    layouts: '_layouts'
     include: ['.htaccess']
     exclude: []
     keep_files: ['.git', '.svn']
@@ -87,5 +88,13 @@ resolveOptions = (config) ->
     config.permalink = '/:categories/:year/:month/:day/:title/'
   else if config.permalink is 'none'
     config.permalink = '/:categories/:title.html'
+
+  # Make sure plugins is an array
+  if typeof config.plugins is 'string'
+    config.plugins = [config.plugins]
+
+  unless config.timezone
+    # Use system default
+    config.timezone = time.currentTimezone
 
   config

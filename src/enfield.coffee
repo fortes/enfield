@@ -3,8 +3,10 @@ fs = require 'fs-extra'
 nopt = require 'nopt'
 path = require 'path'
 node_static = require 'node-static'
+log = require 'npmlog'
 
 conf = require './config'
+generate = require './generate'
 
 # Copy Jekyll
 knownOptions =
@@ -23,6 +25,7 @@ knownOptions =
   baseurl: String
   help: Boolean
   version: Boolean
+  log: String
 
 shortHands =
   s: ['--source']
@@ -42,6 +45,11 @@ module.exports = exports =
     # No command shows help message
     if parsed.help or parsed.argv.remain.length is 0
       return exports.help()
+
+    if parsed.log
+      log.level = parsed.log
+      log.verbose "Set log level: #{parsed.log}"
+
 
     command = parsed.argv.remain[0]
     switch command
@@ -95,7 +103,7 @@ module.exports = exports =
         console.log "New Enfield site installed in #{resolved}"
 
   build: (config, callback = ->) ->
-    callback()
+    generate config, callback
 
   serve: (config, callback = ->) ->
     # Watching happens within the build command
