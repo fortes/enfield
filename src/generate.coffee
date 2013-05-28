@@ -157,6 +157,15 @@ writePage = (page, bundle, callback) ->
     newExt = result.ext
     paginator = page.paginator or {}
 
+    # Update page url with new extension
+    unless newExt is ext
+      page.url = (helpers.stripExtension page.url) + newExt
+
+    # Strip out index.html
+    if path.basename(page.url) is 'index.html'
+      page.url = path.dirname page.url
+      console.log page.url
+
     # Set up correct path / URL
     outpath = path.join config.destination, page.url
     unless path.extname page.url
@@ -512,6 +521,7 @@ loadOthers = (config, others, callback) ->
         if config.pretty_urls
           data.url = helpers.stripExtension file
 
+        console.dir data
         data.content = content
 
         # Add to collection
