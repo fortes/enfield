@@ -8,7 +8,7 @@ Core functionality is identical to Jekyll:
 
 * Blog aware static site generator
 * Compatible with the Jeykll directory and file structure
-* Use Markdown for posts (Textile not supported yet)
+* Use Markdown for posts
 * Code highlighting via Pygments
 * Layouts written using liquid template engine
 * Server / Auto-regenerate
@@ -21,27 +21,45 @@ There are a few bonus features not present in the default install of Jekyll:
 * Support post and page URL aliases via redirects
 * Extension-less page URLs (i.e. `/example/` from `/example.html` via `pretty_urls` configuration variable)
 
+Finally, there are a few missing features:
+
+* Textile support
+* Importing tools
+
 ## Usage
 
 Generated directly from `enfield --help`
 
 ```
-Enfield is a static-site generator modeled after Jekyll
+Enfield is a blog-aware static-site generator modeled after Jekyll
 
-Usage:
-  enfield                          # Generate . -> ./_site
-  enfield [destination]            # Generate . -> <path>
-  enfield [source] [destination]   # Generate <path> -> <path>
+Commands:
+  build                Build your site
+  help                 Display global or [command] help documentation.
+  new                  Creates a new Jekyll site scaffold in PATH
+  serve                Serve your site locally
 
-  enfield init [directory]         # Build default directory structure
-  enfield page [title]             # Create a new post with today's date
-  enfield post [title]             # Create a new page
+Global Options:
+  -s, --source [DIR]
+      Source directory (defaults to ./)
 
-Options:
-  --auto            Auto-regenerate
-  --server [PORT]   Start a web server (default port 4000)
-  --base-url [URL]  Serve website from a give base URL
-  --url [URL]       Set custom site.url
+  -d, --destination [DIR]
+      Destination directory (defaults to ./_site)
+
+  --safe
+      Safe mode (defaults to false)
+
+  --plugins PLUGINS_DIR1[,PLUGINS_DIR2[,...]]
+      Plugins directory (defaults to ./_plugins)
+
+  --layouts
+      Layouts directory (defaults to ./_layouts)
+
+  -h, --help
+      Display help documentation
+
+  -v, --version
+      Display version information
 ```
 
 ## Plugins
@@ -149,6 +167,9 @@ See `src/plugins/enfield-generators.coffee` for examples.
 - Removed Textile support (need to find a better library)
 - Support the `permalink` config property to match Jekyll's permalink paths
 - Add `pretty_urls` config variable for `.html`-less URLs everywhere
+- Match Jekyll 1.0 command-line interface
+- Support timezone config
+- Misc Jekyll compatibility fixes
 
 ### Version 0.2.1
 

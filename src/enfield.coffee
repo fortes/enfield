@@ -106,7 +106,7 @@ module.exports = exports =
   build: (config, callback = ->) ->
     generate config, (err) ->
       if err
-        log.error "enfield", "Error while generating: %s", err
+        log.error "enfield", "Error while generating: %s", err.message
         callback err
       else
         log.info "enfield", "Generation done"
@@ -137,9 +137,7 @@ module.exports = exports =
 
   Commands:
     build                Build your site
-    doctor               Search site and print specific deprecation warnings
     help                 Display global or [command] help documentation.
-    import               Import your old blog to Jekyll
     new                  Creates a new Jekyll site scaffold in PATH
     serve                Serve your site locally
 
