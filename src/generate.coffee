@@ -146,6 +146,9 @@ writePage = (page, bundle, callback) ->
 
     # Set up correct path / URL
     outpath = path.join config.destination, page.url
+    unless path.extname page.url
+      if newExt is '.html'
+        outpath = path.join config.destination, page.url, 'index.html'
 
     # Set up state for any custom tags
     currentState.page = page
