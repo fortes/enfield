@@ -174,7 +174,8 @@ writePage = (page, bundle, callback) ->
         mergedPlugins.filters
       )
     catch err
-      callback new Error "Error while processing page: #{err.message}"
+      log.verbose "generate", "Tinyliquid compile error: %s", err.message
+      callback new Error "Error while processing #{page.url}: #{err.message}"
       return
 
     # Now apply layout, if there is one
@@ -239,9 +240,6 @@ mergePlugins = (a, b) ->
       # Wrap custom tags in a simpler API
       do (name, fn) ->
         merged.tags[name] = (words, line, context, methods) ->
-          console.dir words
-          console.dir line
-          console.dir context
           # Call the plugin function using a much simpler API
           # Need to set page and site variables before running liquid conversion
           result = fn words, currentState.page, currentState.site
@@ -284,7 +282,9 @@ resolveIncludes = (config, includes, converters) ->
     if matches
       for str in matches
         match = str.match /\{%\s*include\s+([^\s%]+)\s*%\}/im
-        dependencyGraph.push [file, match[1]]
+        # Ignore self-dependencies
+        unless match[1] is file
+          dependencyGraph.push [file, match[1]]
     else
       # Can resolve directly
       resolved[file] = tinyliquid.parse(content).code
@@ -295,6 +295,7 @@ resolveIncludes = (config, includes, converters) ->
   try
     sorted = toposort(dependencyGraph).reverse()
   catch err
+    log.verbose "generate", "Depdency graph for includes: %j", dependencyGraph
     throw new Error "Cyclic depdendency within includes"
 
   for file in sorted

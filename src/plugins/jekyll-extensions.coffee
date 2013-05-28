@@ -47,11 +47,9 @@ module.exports =
     # markdownify
   tags:
     highlight: (tokens, page, site) ->
-      console.dir tokens
       return """<pre><code lang="#{tokens}">"""
 
     endhighlight: (tokens, page, site) ->
-      console.dir tokens
       return "</code></pre>"
 
     post_url: (tokens, page, site) ->

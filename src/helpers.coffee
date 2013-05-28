@@ -62,6 +62,10 @@ module.exports = exports =
           # Yaml sometimes returns non-objects
           if typeof data isnt 'object'
             data = { value: data }
+          for name, value of data
+            # Convert nil to null, not sure why the library doesn't do this
+            if value is 'nil'
+              data[name] = null
           # Remaining lines are the content
           content = lines.join '\n'
 
@@ -74,7 +78,7 @@ module.exports = exports =
     path.join dirname, basename
 
   stripDirectoryPrefix: (name, base) ->
-    if exports.isWithinDirectory name, base
+    if base and exports.isWithinDirectory name, base
       length = base.length + 1
       if base[base.length - 1] is '/'
         length = base.length
