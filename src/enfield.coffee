@@ -109,7 +109,7 @@ module.exports = exports =
     # Watching happens within the build command
     exports.build config, (err) ->
       if err
-        log.error "enfield", Could not generate site: #{err.message}"
+        log.error "enfield", "Could not generate site: #{err.message}"
         process.exit -1
 
       fileServer = new(node_static.Server) config.destination

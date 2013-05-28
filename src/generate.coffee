@@ -494,6 +494,8 @@ loadOthers = (config, others, callback) ->
         data.filepath = file
         # Use filepath as URL at first (gets changed during output)
         data.url = file
+        if config.pretty_urls
+          data.url = helpers.stripExtension file
 
         data.content = content
 
