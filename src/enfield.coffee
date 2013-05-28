@@ -64,7 +64,7 @@ module.exports = exports =
 
         conf.get options, (err, config) ->
           if err
-            console.error "Could not get configuration: #{err.message}"
+            log.error "enfield", "Could not get configuration: #{err.message}"
             process.exit -1
 
           printConfiguration config
@@ -76,12 +76,12 @@ module.exports = exports =
       when 'help'
         exports.help()
       else
-        console.error "Invalid command. Use --help for more information"
+        log.error "enfield", "Invalid command. Use --help for more information"
         process.exit -1
 
   new: (dir) ->
     unless dir
-      console.error "Must specify a path"
+      log.error "enfield", "Must specify a path"
       process.exit -1
 
     resolved = path.resolve dir
@@ -89,7 +89,7 @@ module.exports = exports =
     # Throw error if exists and not empty
     if fs.existsSync(resolved)
       if fs.readdirSync(resolved).length
-        console.error "Confict: #{resolved} exists and is not empty"
+        log.error "enfield", "Confict: #{resolved} exists and is not empty"
         process.exit -1
       else
         # Remove it so we can bulk copy
@@ -98,9 +98,9 @@ module.exports = exports =
     # TODO: Copy site_template over
     fs.copy path.join(__dirname, '../site_template'), resolved, (err) ->
       if err
-        console.error "Could not create new site: #{err.message}"
+        log.error "enfield", "Could not create new site: #{err.message}"
       else
-        console.log "New Enfield site installed in #{resolved}"
+        log.info "enfield", "New site installed in #{resolved}"
 
   build: (config, callback = ->) ->
     generate config, callback
@@ -109,15 +109,15 @@ module.exports = exports =
     # Watching happens within the build command
     exports.build config, (err) ->
       if err
-        console.error "Could not generate site: #{err.message}"
+        log.error "enfield", Could not generate site: #{err.message}"
         process.exit -1
 
       fileServer = new(node_static.Server) config.destination
       server = require('http').createServer (request, response) ->
-        console.info "[#{timestamp()}] #{request.method} #{request.url}"
+        log.http "server", "[#{timestamp()}] #{request.method} #{request.url}"
         fileServer.serve request, response
 
-      console.log "Running server at http://#{config.host}:#{config.port}"
+      log.info "enfield", "Running server at http://#{config.host}:#{config.port}"
       server.listen config.port, config.host
 
   version: ->
