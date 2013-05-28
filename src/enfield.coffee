@@ -104,7 +104,13 @@ module.exports = exports =
         log.info "enfield", "New site installed in #{resolved}"
 
   build: (config, callback = ->) ->
-    generate config, callback
+    generate config, (err) ->
+      if err
+        log.error "enfield", "Error while generating: %s", err
+        callback err
+      else
+        log.info "enfield", "Generation done"
+        callback()
 
   serve: (config, callback = ->) ->
     # Watching happens within the build command
@@ -112,6 +118,8 @@ module.exports = exports =
       if err
         log.error "enfield", "Could not generate site: #{err.message}"
         process.exit -1
+
+      log.info "enfield", "Generation done"
 
       fileServer = new(node_static.Server) config.destination
       server = require('http').createServer (request, response) ->
@@ -161,8 +169,11 @@ module.exports = exports =
   DEFAULT_CONFIGURATION: conf.DEFAULTS
 
 printConfiguration = (config) ->
-  console.log "Configuration File: #{config.config or 'none'}"
-  console.log "            Source: #{config.source}"
-  console.log "       Destination: #{config.destination}"
+  if config.config
+    log.info "enfield", "Configuration File: %s", config.config
+  else
+    log.warn "enfield", "No configuration file"
+  log.info "enfield", "Source: %s", config.source
+  log.info "enfield", "Destination: %s", config.destination
 
 timestamp = -> (new Date).toLocaleTimeString()

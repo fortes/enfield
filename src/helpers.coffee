@@ -74,12 +74,15 @@ module.exports = exports =
     path.join dirname, basename
 
   stripDirectoryPrefix: (name, base) ->
-    if name.substr(0, base.length) is base
+    if exports.isWithinDirectory name, base
       length = base.length + 1
       if base[base.length - 1] is '/'
         length = base.length
       name = name.substr length
     name
+
+  isWithinDirectory: (name, base) ->
+    name.substr(0, base.length) is base
 
   # Pad to two digits
   twoDigitPad: (num) -> if num < 10 then "0#{num}" else num

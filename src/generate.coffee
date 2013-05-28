@@ -2,6 +2,7 @@ fs = require 'fs-extra'
 log = require 'npmlog'
 path = require 'path'
 glob = require 'glob'
+gaze = require 'gaze'
 time = require('time')(Date) # Extend global object
 async = require 'async'
 toposort = require 'toposort'
@@ -19,6 +20,7 @@ currentState = null
 INCLUDE_PATH = '_includes'
 
 module.exports = exports = (config, callback) ->
+  log.info
   # First-run initialization
   postMask = ///^(\d{4})-(\d{2})-(\d{2})-(.+)\.(#{config.markdown_ext.join '|'}|html)$///
   time.tzset config.timezone
@@ -27,32 +29,43 @@ module.exports = exports = (config, callback) ->
     (cb) -> checkDirectories config, cb
     # Built-in enfield plugins
     loadBundledPlugins
-    (cb) ->
-      cb()
-  ], (err) -> refreshContent config, callback
+  ], (err) -> refreshContent config, (err) ->
+    if err
+      return callback err
+
+    log.info "generate", "Generated %s -> %s", config.source, config.destination
+    callback()
+    return unless config.watch
+
+    destinationPath = path.resolve config.destination
+    gaze path.join(config.source, '**/*'), {debounceDelay: 500}, (err, watcher) ->
+      log.info "watch", "Watching %s for changes", config.source
+      watcher.on 'all', (event, filepath) ->
+        # Ignore any path within the destination directory
+        return if helpers.isWithinDirectory filepath, destinationPath
+
+        # Ignore any path within hidden/ignored directories
+
+        # TODO: Special case _config.yml
+        # TODO: Reload plugins
+
+        log.info "watch", "%s %s", event, filepath
+        refreshContent config, ->
+          log.info "watch", "Regenerated"
 
 refreshContent = (config, callback) ->
   # Get content in parallel:
   async.parallel [
+    # Mimic Jekyll behavior by clearing out destination first
+    (cb) -> fs.remove config.destination, cb
     (cb) -> loadSitePlugins config, cb
     (cb) -> loadIncludes config, cb
     (cb) -> loadLayouts config, cb
     (cb) -> loadContents config, cb
-  ], (err, [plugins, includes, layouts, { posts, pages, files }]) ->
+  ], (err, [_, plugins, includes, layouts, { posts, pages, files }]) ->
     if err then return callback err
     log.verbose "generate", "Initial content load complete"
     processResults {config, plugins, includes, layouts, posts, pages, files}, callback
-
-  # includes
-  # layouts
-  # posts
-  # pages & static files
-  # plugins
-
-  # Mimic Jekyll behavior by clearing out destination first
-  # Sort converters based on priority
-  #fs.removeSync config.destination
-  # Setup watch
 
 processResults = ({config, plugins, includes, layouts, posts, pages, files}, callback) ->
   # Create site data structure
@@ -188,10 +201,11 @@ writeFiles = (bundle, callback) ->
     site.static_files
     5
     (filepath, cb) ->
-      outpath = path.join config.destination, filepath
+      relpath = helpers.stripDirectoryPrefix filepath, config.source
+      outpath = path.join config.destination, relpath
       log.verbose "generate", "Copying %s -> %s", filepath, outpath
       fs.mkdirs path.dirname outpath
-      fs.copy path.join(config.source, filepath), outpath, cb
+      fs.copy filepath, outpath, cb
     callback
   )
 
@@ -351,7 +365,7 @@ getRawIncludes = (config, callback) ->
   includes = path.join config.source, INCLUDE_PATH
   fs.exists includes, (exists) ->
     unless exists
-      log.warn "generate", "Missing include directory: %s", includes
+      log.verbose "generate", "Missing include directory: %s", includes
       return callback null, {}
 
     helpers.mapFiles(
@@ -491,9 +505,9 @@ loadOthers = (config, others, callback) ->
         unless 'published' of data
           data.published = true
         # Save original filepath
-        data.filepath = file
+        data.filepath = helpers.stripDirectoryPrefix file, config.source
         # Use filepath as URL at first (gets changed during output)
-        data.url = file
+        data.url = data.filepath
         if config.pretty_urls
           data.url = helpers.stripExtension file
 

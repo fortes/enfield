@@ -97,4 +97,9 @@ resolveOptions = (config) ->
     # Use system default
     config.timezone = time.currentTimezone
 
+  # Make source relative to current directory
+  config.source = path.relative process.cwd(), config.source
+  # Make destination relative to current
+  config.destination = path.relative process.cwd(), config.destination
+
   config
