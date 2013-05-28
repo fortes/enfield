@@ -49,7 +49,8 @@ module.exports = exports =
     if parsed.log
       log.level = parsed.log
       log.verbose "Set log level: #{parsed.log}"
-
+    else
+      log.level = 'info'
 
     command = parsed.argv.remain[0]
     switch command
