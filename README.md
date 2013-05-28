@@ -176,6 +176,10 @@ See `src/plugins/enfield-generators.coffee` for examples.
 * Post index page for year directories
 * Check for permalink collisions due to same slug and different dates
 
+## License
+
+MIT
+
 ## This Project Has a Stupid Name
 
 Richard Enfield is a minor character in [The Strange Case of Dr. Jekyll and Mr. Hyde](http://en.wikipedia.org/wiki/Strange_Case_of_Dr_Jekyll_and_Mr_Hyde).
