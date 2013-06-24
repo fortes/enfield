@@ -164,7 +164,6 @@ See `src/plugins/enfield-generators.coffee` for examples.
 - Initial support for custom tag plugins
 - Support Jekyll-style pagination
 - Add support for `post_url` included in Jekyll
-- Textile support via bundled plugin
 - Make nested includes actually work
 - Use pygments for code highlighting w/ Marked's async API
 - Includes can use markdown
