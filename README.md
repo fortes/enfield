@@ -155,20 +155,25 @@ See `src/plugins/enfield-generators.coffee` for examples.
 
 ## Changelog
 
-### Version 0.3.0 (in progress)
+### HEAD
+
+- Nothing yet
+
+### Version 0.3.0
 
 - Initial support for custom tag plugins
 - Support Jekyll-style pagination
 - Add support for `post_url` included in Jekyll
 - Textile support via bundled plugin
 - Make nested includes actually work
-- Use pygments for code highlighting
+- Use pygments for code highlighting w/ Marked's async API
 - Includes can use markdown
 - Removed Textile support (need to find a better library)
 - Support the `permalink` config property to match Jekyll's permalink paths
 - Add `pretty_urls` config variable for `.html`-less URLs everywhere
 - Match Jekyll 1.0 command-line interface
 - Support timezone config
+- Enable smartypants quote handling thanks to Marked
 - Misc Jekyll compatibility fixes
 
 ### Version 0.2.1
