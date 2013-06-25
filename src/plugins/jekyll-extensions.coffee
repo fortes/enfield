@@ -1,7 +1,7 @@
 # Liquid extensions added by Jekyll
 moment = require 'moment'
 querystring = require 'querystring'
-ent = require 'ent'
+he = require 'he'
 
 module.exports =
   filters:
@@ -24,7 +24,7 @@ module.exports =
       else
         str
     xml_escape: (str) ->
-      ent.encode str
+      he.escape str
     cgi_escape: (str) ->
       querystring.escape str
     uri_escape: (str) ->
