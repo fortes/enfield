@@ -157,7 +157,8 @@ See `src/plugins/enfield-generators.coffee` for examples.
 
 ### HEAD
 
-- Nothing yet
+- Use pygments for code highlighting w/ Marked's async API
+- Use `he` instead of `ent` for entity encoding
 
 ### Version 0.3.0
 
@@ -165,7 +166,6 @@ See `src/plugins/enfield-generators.coffee` for examples.
 - Support Jekyll-style pagination
 - Add support for `post_url` included in Jekyll
 - Make nested includes actually work
-- Use pygments for code highlighting w/ Marked's async API
 - Includes can use markdown
 - Removed Textile support (need to find a better library)
 - Support the `permalink` config property to match Jekyll's permalink paths
