@@ -14,13 +14,11 @@ helpers = require './helpers'
 bundledPlugins = null
 # Regexp for matching post filenames
 postMask = null
-# Global handle for current content being converted
-currentState = null
 
 INCLUDE_PATH = '_includes'
 
 module.exports = exports = (config, callback) ->
-  log.info
+  log.info "generate", "Begin generation"
   # First-run initialization
   postMask = ///^(\d{4})-(\d{2})-(\d{2})-(.+)\.(#{config.markdown_ext.join '|'}|html)$///
   time.tzset config.timezone
@@ -95,12 +93,22 @@ processResults = ({config, plugins, includes, layouts, posts, pages, files}, cal
   # Prepare plugins
   mergedPlugins = mergePlugins bundledPlugins, plugins
 
-  # Resolve includes
-  includes = resolveIncludes config, includes, mergePlugins.converters
-
   liquidOptions =
-    files: includes
     tags: mergedPlugins.tags
+
+  # Create base context for tinyliquid
+  context = tinyliquid.newContext {
+    locals: {
+      site
+    }
+    filters: mergedPlugins.filters
+  }
+
+  # Handle {% include %} tags
+  context.onInclude (name, callback) ->
+    log.silly "generate", "Fetching include for %s", name
+    ast = tinyliquid.compile includes[name], liquidOptions
+    callback null, ast
 
   # Compile layouts
   compiledLayouts = {}
@@ -111,6 +119,8 @@ processResults = ({config, plugins, includes, layouts, posts, pages, files}, cal
       callback new Error "Error while compiling layout: #{err.message}"
       return
 
+  log.verbose "generate", "Reading complete. Preparing to write"
+
   # Run generators
   async.forEachSeries(
     mergedPlugins.generators,
@@ -119,7 +129,7 @@ processResults = ({config, plugins, includes, layouts, posts, pages, files}, cal
       if err then return callback err
 
       # Now write all content to disk
-      bundle = { site, config, liquidOptions, compiledLayouts, mergedPlugins }
+      bundle = { site, config, liquidOptions, compiledLayouts, mergedPlugins, context }
       async.series([
         (cb) -> writePostsAndPages bundle, cb
         (cb) -> writeFiles bundle, cb
@@ -128,9 +138,6 @@ processResults = ({config, plugins, includes, layouts, posts, pages, files}, cal
 
 writePostsAndPages = (bundle, callback) ->
   { site } = bundle
-
-  # Set up state for any custom tags
-  currentState = { site, page: null }
 
   allPages = site.posts.concat site.pages
   async.forEachLimit(
@@ -142,7 +149,7 @@ writePostsAndPages = (bundle, callback) ->
 
 writePage = (page, bundle, callback) ->
   log.verbose "generate", "writePage %s", page.url
-  { site, config, liquidOptions, compiledLayouts, mergedPlugins } = bundle
+  { site, config, liquidOptions, compiledLayouts, mergedPlugins, context } = bundle
 
   # Respect published file
   return callback() unless config.future or page.published
@@ -171,37 +178,39 @@ writePage = (page, bundle, callback) ->
       if newExt is '.html'
         outpath = path.join config.destination, page.url, 'index.html'
 
-    # Set up state for any custom tags
-    currentState.page = page
+    context.setLocals 'page', page
+    context.setLocals 'paginator', paginator
 
     # Content may contain liquid directives (such as a post listing). Process
     # now before layout
-    try
-      page.content = tinyliquid.compile(page.content, liquidOptions)(
-        { site, page, paginator }
-        mergedPlugins.filters
-      )
-    catch err
-      log.verbose "generate", "Tinyliquid compile error: %s", err.message
-      callback new Error "Error while processing #{page.url}: #{err.message}"
-      return
+    render = tinyliquid.compile page.content, liquidOptions
+    render context, (err) ->
+      if err
+        log.verbose "generate", "Tinyliquid compile error: %s", err.message
+        callback new Error "Error while processing #{page.url}: #{err.message}"
+        return
 
-    # Now apply layout, if there is one
-    if page.layout and page.layout of compiledLayouts
+      log.silly "generate", "Rendered page content for %s", page.url
+      page.content = context.clearBuffer().toString()
+
+      # If there's no layout, then we're done
+      unless page.layout and page.layout of compiledLayouts
+        log.verbose "generate", "Writing file without layout: %s", outpath
+        fs.outputFile outpath, page.content, callback
+        return
+
       log.verbose "generate", "Applying layout %s to %s", page.layout, page.url
       template = compiledLayouts[page.layout]
-      rendered = template {
-        content: page.content
-        site
-        page
-        paginator
-      }, mergedPlugins.filters
-    else
-      rendered = page.content
+      context.setLocals 'content', page.content
+      template context, (err) ->
+        if err
+          log.verbose "generate", "Tinyliquid compile error: %s", err.message
+          callback new Error "Error while processing #{page.url}: #{err.message}"
+          return
 
-    # Write file
-    log.verbose "generate", "Writing file: %s", outpath
-    fs.outputFile outpath, rendered, callback
+        # Write file
+        log.verbose "generate", "Writing file: %s", outpath
+        fs.outputFile outpath, context.clearBuffer(), callback
 
 writeFiles = (bundle, callback) ->
   log.verbose "generate", "Writing static files"
@@ -247,7 +256,7 @@ mergePlugins = (a, b) ->
     for name, fn of set.tags
       # Wrap custom tags in a simpler API
       do (name, fn) ->
-        merged.tags[name] = (words, line, context, methods) ->
+        merged.tags[name] = (context, name, body) ->
           # Call the plugin function using a much simpler API
           # Need to set page and site variables before running liquid conversion
           result = fn words, currentState.page, currentState.site
@@ -278,45 +287,6 @@ loadIncludes = (config, callback) ->
 
     log.verbose "generate", "Normalized includes: %s", Object.keys(normalized).join ', '
     callback null, normalized
-
-resolveIncludes = (config, includes, converters) ->
-  includeDir = path.join config.source, INCLUDE_PATH
-  resolved = {}
-
-  # Calculate dependency graph
-  dependencyGraph = []
-  for file, content of includes
-    matches = content.match /\{%\s*include\s+([^\s%]+)\s*%\}/img
-    if matches
-      for str in matches
-        match = str.match /\{%\s*include\s+([^\s%]+)\s*%\}/im
-        # Ignore self-dependencies
-        unless match[1] is file
-          dependencyGraph.push [file, match[1]]
-    else
-      # Can resolve directly
-      resolved[file] = tinyliquid.parse(content).code
-
-  # Topological sort for processing includes since tinyliquid needs includes
-  # to be precompiled
-  # Note, can contain dupes
-  try
-    sorted = toposort(dependencyGraph).reverse()
-  catch err
-    log.verbose "generate", "Depdency graph for includes: %j", dependencyGraph
-    throw new Error "Cyclic depdendency within includes"
-
-  for file in sorted
-    # Ignore files that are done, or don't exist
-    continue if (file of resolved)
-    continue unless file of includes
-
-    # TinyLiquid requires parsed (not compiled) code in order for includes
-    # to work properly
-    parsedInclude = tinyliquid.parse includes[file], files: resolved
-    resolved[file] = parsedInclude.code
-
-  resolved
 
 loadLayouts = (config, callback) ->
   log.verbose "generate", "Loooking for layouts in %s", config.layouts
