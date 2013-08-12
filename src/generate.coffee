@@ -147,7 +147,7 @@ writePage = (page, bundle, callback) ->
   # Respect published file
   return callback() unless config.future or page.published
 
-  ext = path.extname page.filepath
+  ext = path.extname(page.filepath) or page.ext
 
   # Run conversion
   convertContent ext, page.content, mergedPlugins.converters, (err, result) ->
@@ -161,7 +161,9 @@ writePage = (page, bundle, callback) ->
 
     # Update page url with new extension
     unless newExt is ext
-      page.url = (helpers.stripExtension page.url) + newExt
+      # Pretty URLs don't get extensions
+      unless newExt is '.html' and config.pretty_urls
+        page.url = (helpers.stripExtension page.url) + newExt
 
     # Strip out index.html
     if path.basename(page.url) is 'index.html'
