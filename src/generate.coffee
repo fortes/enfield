@@ -153,6 +153,8 @@ writePage = (page, bundle, callback) ->
   convertContent ext, page.content, mergedPlugins.converters, (err, result) ->
     if err then return callback err
 
+    log.verbose "generate", "Processing %s (%s)", page.title, page.url
+
     page.content = result.content
     newExt = result.ext
     paginator = page.paginator or {}

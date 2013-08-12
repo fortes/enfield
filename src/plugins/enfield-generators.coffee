@@ -39,7 +39,7 @@ module.exports =
           site.pages.push {
             published: page.published
             url: alias
-            raw_content: html
+            content: html
             ext: '.html'
           }
 
@@ -60,7 +60,7 @@ module.exports =
             site.pages.push {
               published: true
               url: outPath
-              raw_content: minified
+              content: minified
               ext: '.js'
             }
           catch err
@@ -97,7 +97,7 @@ module.exports =
                 site.pages.push {
                   published: true
                   url: outPath
-                  raw_content: css
+                  content: css
                   ext: '.css'
                 }
                 cb()
