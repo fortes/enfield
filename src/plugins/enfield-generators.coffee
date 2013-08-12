@@ -5,9 +5,10 @@ fs = require 'fs-extra'
 less = require 'less'
 uglify = require 'uglify-js'
 path = require 'path'
+log = require 'npmlog'
 
 createRedirectHTML = (page) ->
-  url = page.url
+  {url} = page
   return """
 <!doctype html>
 <html>
@@ -43,12 +44,16 @@ module.exports =
             ext: '.html'
           }
 
-      callback()
+      # Do the callback async to avoid crazy stack traces
+      setTimeout callback, 0
 
     # Compile CoffeeScript files to minified JS
     coffeeScript: (site, callback) ->
-      for filepath in site.static_files
+      for filepath, i in site.static_files
         if /\.coffee$/.test filepath
+          # Exclude from output
+          site.static_files[i] = null
+
           # Compile and minify
           fileContents = fs.readFileSync(filepath).toString()
           try
@@ -64,14 +69,20 @@ module.exports =
               ext: '.js'
             }
           catch err
-            console.error "CoffeeScript Compilation Error: #{err.message}".red
+            log.warn "CoffeeScript Compilation Error: #{err.message}".red
 
-      callback()
+      # Do the callback async to avoid crazy stack traces
+      setTimeout callback, 0
 
     # Compile LESS files into minified CSS
     lessCSS: (site, callback) ->
-      # Collect files
-      lessFiles = site.static_files.filter (f) -> /\.less$/.test f
+      # Collect files and remove original .less source
+      lessFiles = []
+      for filepath, i in site.static_files
+        if path.extname(filepath) is '.less'
+          # Remove from output
+          site.static_files[i] = null
+          lessFiles.push filepath
 
       # Work in parallel
       async.forEachLimit(
@@ -90,7 +101,7 @@ module.exports =
             try
               less.render contents.toString(), options, (err, css) ->
                 if err
-                  console.error "LESS Compilation Error: #{err.message}".red
+                  log.error "LESS Compilation Error: #{err.message}".red
                   return cb()
 
                 outPath = filepath.replace /\.less$/, ''
@@ -102,7 +113,7 @@ module.exports =
                 }
                 cb()
             catch err
-              console.error "LESS Compilation Error: #{err.message}".red
+              log.warn "LESS Compilation Error: #{err.message}".red
               cb()
         callback
       )

@@ -118,6 +118,9 @@ processResults = ({config, plugins, includes, layouts, posts, pages, files}, cal
     (err) ->
       if err then return callback err
 
+      # Filter out any files blanked by generators
+      site.static_files = site.static_files.filter (f) -> !!f
+
       # Now write all content to disk
       bundle = { site, config, liquidOptions, compiledLayouts, mergedPlugins }
       async.series([
@@ -147,7 +150,7 @@ writePage = (page, bundle, callback) ->
   # Respect published file
   return callback() unless config.future or page.published
 
-  ext = path.extname(page.filepath) or page.ext
+  ext = path.extname page.filepath
 
   # Run conversion
   convertContent ext, page.content, mergedPlugins.converters, (err, result) ->
@@ -156,17 +159,17 @@ writePage = (page, bundle, callback) ->
     log.verbose "generate", "Processing %s (%s)", page.title, page.url
 
     page.content = result.content
-    newExt = result.ext
+    newExt = result.ext or page.ext
     paginator = page.paginator or {}
 
     # Update page url with new extension
     unless newExt is ext
       # Pretty URLs don't get extensions
-      unless newExt is '.html' and config.pretty_urls
+      unless config.pretty_urls and newExt is '.html'
         page.url = (helpers.stripExtension page.url) + newExt
 
     # Strip out index.html
-    if path.basename(page.url) is 'index.html'
+    if path.basename(page.url, '.html') is 'index'
       page.url = path.dirname page.url
 
     # Set up correct path / URL
