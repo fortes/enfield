@@ -68,6 +68,7 @@ Enfield will load any `.coffee` or `.js` file from the `_plugins` directory. The
 
 * Converters
 * Liquid Filters
+* Custom Tags
 * Generators
 
 ### Converters
