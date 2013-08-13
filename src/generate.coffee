@@ -95,45 +95,48 @@ processResults = ({config, plugins, includes, layouts, posts, pages, files}, cal
   # Prepare plugins
   mergedPlugins = mergePlugins bundledPlugins, plugins
 
-  # Resolve includes
-  includes = resolveIncludes config, includes, mergePlugins.converters
+  convertIncludes includes, mergedPlugins.converters, (err) ->
+    if err then return callback err
 
-  liquidOptions =
-    files: includes
-    tags: mergedPlugins.tags
+    # Resolve includes
+    includes = resolveIncludes config, includes
 
-  # Compile layouts
-  compiledLayouts = {}
-  for name, {data, content} of layouts
-    try
-      compiledLayouts[name] = tinyliquid.compile content, liquidOptions
-    catch err
-      callback new Error "Error while compiling layout: #{err.message}"
-      return
+    liquidOptions =
+      files: includes
+      tags: mergedPlugins.tags
 
-  # Run generators
-  async.forEachSeries(
-    mergedPlugins.generators,
-    (generator, cb) -> generator site, cb
-    (err) ->
-      if err then return callback err
+    # Compile layouts
+    compiledLayouts = {}
+    for name, {data, content} of layouts
+      try
+        compiledLayouts[name] = tinyliquid.compile content, liquidOptions
+      catch err
+        callback new Error "Error while compiling layout: #{err.message}"
+        return
 
-      # Filter out any files blanked by generators
-      site.static_files = site.static_files.filter (f) -> !!f
+    # Run generators
+    async.forEachSeries(
+      mergedPlugins.generators,
+      (generator, cb) -> generator site, cb
+      (err) ->
+        if err then return callback err
 
-      # Set up state for any custom tags
-      currentState = { site, page: null }
+        # Filter out any files blanked by generators
+        site.static_files = site.static_files.filter (f) -> !!f
 
-      # Now write all content to disk
-      bundle = { site, config, liquidOptions, compiledLayouts, mergedPlugins }
-      async.series([
-        # Write posts before pages, since pagination, etc depend on
-        # post-conversion HTML
-        (cb) -> writePages site.posts, bundle, cb
-        (cb) -> writePages site.pages, bundle, cb
-        (cb) -> writeFiles bundle, cb
-      ], callback)
-  )
+        # Set up state for any custom tags
+        currentState = { site, page: null }
+
+        # Now write all content to disk
+        bundle = { site, config, liquidOptions, compiledLayouts, mergedPlugins }
+        async.series([
+          # Write posts before pages, since pagination, etc depend on
+          # post-conversion HTML
+          (cb) -> writePages site.posts, bundle, cb
+          (cb) -> writePages site.pages, bundle, cb
+          (cb) -> writeFiles bundle, cb
+        ], callback)
+    )
 
 writePages = (pages, bundle, callback) ->
   async.forEachLimit(
@@ -286,7 +289,7 @@ loadIncludes = (config, callback) ->
     log.verbose "generate", "Normalized includes: %s", Object.keys(normalized).join ', '
     callback null, normalized
 
-resolveIncludes = (config, includes, converters) ->
+resolveIncludes = (config, includes) ->
   includeDir = path.join config.source, INCLUDE_PATH
   resolved = {}
 
@@ -324,6 +327,18 @@ resolveIncludes = (config, includes, converters) ->
     resolved[file] = parsedInclude.code
 
   resolved
+
+convertIncludes = (includes, converters, callback) ->
+  async.forEach(
+    Object.keys includes
+    (includeName, cb) ->
+      convertContent path.extname(includeName), includes[includeName], converters, (err, result) ->
+        if err then return callback err
+        log.error 'generate', "Converted include %s: %s", includeName, result.content
+        includes[includeName] = result.content
+        cb()
+    callback
+  )
 
 loadLayouts = (config, callback) ->
   log.verbose "generate", "Loooking for layouts in %s", config.layouts
