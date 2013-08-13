@@ -121,23 +121,23 @@ processResults = ({config, plugins, includes, layouts, posts, pages, files}, cal
       # Filter out any files blanked by generators
       site.static_files = site.static_files.filter (f) -> !!f
 
+      # Set up state for any custom tags
+      currentState = { site, page: null }
+
       # Now write all content to disk
       bundle = { site, config, liquidOptions, compiledLayouts, mergedPlugins }
       async.series([
-        (cb) -> writePostsAndPages bundle, cb
+        # Write posts before pages, since pagination, etc depend on
+        # post-conversion HTML
+        (cb) -> writePages site.posts, bundle, cb
+        (cb) -> writePages site.pages, bundle, cb
         (cb) -> writeFiles bundle, cb
       ], callback)
   )
 
-writePostsAndPages = (bundle, callback) ->
-  { site } = bundle
-
-  # Set up state for any custom tags
-  currentState = { site, page: null }
-
-  allPages = site.posts.concat site.pages
+writePages = (pages, bundle, callback) ->
   async.forEachLimit(
-    allPages
+    pages
     5
     (page, cb) -> writePage page, bundle, cb
     callback
