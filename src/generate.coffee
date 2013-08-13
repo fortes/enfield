@@ -334,7 +334,6 @@ convertIncludes = (includes, converters, callback) ->
     (includeName, cb) ->
       convertContent path.extname(includeName), includes[includeName], converters, (err, result) ->
         if err then return callback err
-        log.error 'generate', "Converted include %s: %s", includeName, result.content
         includes[includeName] = result.content
         cb()
     callback
