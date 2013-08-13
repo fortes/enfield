@@ -75,7 +75,7 @@ module.exports =
       # As in Jekyll, pagination only works in index.html files
       for page in site.pages
         # Only paginate at root
-        unless (page.url is '/')
+        unless (page.url is 'index')
           continue
 
         page_number = 1
@@ -97,14 +97,15 @@ module.exports =
           total_posts
           total_pages
           previous_page
+          previous_page_path: null
           next_page
+          next_page_path: if next_page then "/page#{next_page}" else null
         }
 
         remainingPosts = site.posts.slice per_page
         for page_number in [2..total_pages] by 1
           # Clone the base page
           newPage = {}
-          site.pages.push newPage
 
           for key, value of page
             newPage[key] = value
@@ -125,7 +126,11 @@ module.exports =
             total_posts
             total_pages
             previous_page
+            previous_page_path: "/page#{previous_page}"
             next_page
+            next_page_path: if next_page then "/page#{next_page}" else null
           }
+
+          site.pages.push newPage
 
       callback()

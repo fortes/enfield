@@ -110,41 +110,44 @@ processResults = ({config, plugins, includes, layouts, posts, pages, files}, cal
     ast = tinyliquid.compile includes[name], liquidOptions
     callback null, ast
 
-  # Compile layouts
-  compiledLayouts = {}
-  for name, {data, content} of layouts
-    try
-      compiledLayouts[name] = tinyliquid.compile content, liquidOptions
-    catch err
-      callback new Error "Error while compiling layout: #{err.message}"
-      return
+  convertIncludes includes, mergedPlugins.converters, (err) ->
+    if err then return callback err
 
-  log.verbose "generate", "Reading complete. Preparing to write"
+    # Compile layouts
+    compiledLayouts = {}
+    for name, {data, content} of layouts
+      try
+        compiledLayouts[name] = tinyliquid.compile content, liquidOptions
+      catch err
+        callback new Error "Error while compiling layout: #{err.message}"
+        return
 
-  # Run generators
-  async.forEachSeries(
-    mergedPlugins.generators,
-    (generator, cb) -> generator site, cb
-    (err) ->
-      if err then return callback err
+    log.verbose "generate", "Reading complete. Preparing to write"
 
-      # Filter out any files blanked by generators
-      site.static_files = site.static_files.filter (f) -> !!f
+    # Run generators
+    async.forEachSeries(
+      mergedPlugins.generators,
+      (generator, cb) -> generator site, cb
+      (err) ->
+        if err then return callback err
 
-      # Now write all content to disk
-      bundle = { site, config, liquidOptions, compiledLayouts, mergedPlugins, context }
-      async.series([
-        (cb) -> writePostsAndPages bundle, cb
-        (cb) -> writeFiles bundle, cb
-      ], callback)
-  )
+        # Filter out any files blanked by generators
+        site.static_files = site.static_files.filter (f) -> !!f
 
-writePostsAndPages = (bundle, callback) ->
-  { site } = bundle
+        # Now write all content to disk
+        bundle = { site, config, liquidOptions, compiledLayouts, mergedPlugins, context }
+        async.series([
+          # Write posts before pages, since pagination, etc depend on
+          # post-conversion HTML
+          (cb) -> writePages site.posts, bundle, cb
+          (cb) -> writePages site.pages, bundle, cb
+          (cb) -> writeFiles bundle, cb
+        ], callback)
+    )
 
-  allPages = site.posts.concat site.pages
+writePages = (pages, bundle, callback) ->
   async.forEachLimit(
-    allPages
+    pages
     5
     (page, cb) -> writePage page, bundle, cb
     callback
@@ -294,6 +297,18 @@ loadIncludes = (config, callback) ->
 
     log.verbose "generate", "Normalized includes: %s", Object.keys(normalized).join ', '
     callback null, normalized
+
+convertIncludes = (includes, converters, callback) ->
+  async.forEach(
+    Object.keys includes
+    (includeName, cb) ->
+      convertContent path.extname(includeName), includes[includeName], converters, (err, result) ->
+        if err then return callback err
+        log.error 'generate', "Converted include %s: %s", includeName, result.content
+        includes[includeName] = result.content
+        cb()
+    callback
+  )
 
 loadLayouts = (config, callback) ->
   log.verbose "generate", "Loooking for layouts in %s", config.layouts
