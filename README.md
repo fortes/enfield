@@ -158,6 +158,7 @@ See `src/plugins/enfield-generators.coffee` for examples.
 
 ### HEAD
 
+- New liquid tag `{% page_url %}` for linking to posts (similar to `{% post_url %}` from Jekyll)
 - Use pygments for code highlighting w/ Marked's async API
 - Use new async API from tinyliquid 0.2
 - Use `he` instead of `ent` for entity encoding

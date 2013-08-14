@@ -20,7 +20,22 @@ createRedirectHTML = (page) ->
 </html>
 """
 
+stripExtension = (name) ->
+  basename = path.basename name, path.extname name
+  dirname = path.dirname name
+  path.join dirname, basename
+
 module.exports =
+  tags:
+    page_url: (body, page, site) ->
+      if body
+        for page in site.pages
+          if body is page.path or body is stripExtension page.path
+            return page.url
+
+      log.warn "page_url", "page_url #{body} could not be found"
+      return '#'
+
   generators:
     # Generates url aliases
     # Inspired by https://github.com/tsmango/jekyll_alias_generator
