@@ -159,6 +159,7 @@ See `src/plugins/enfield-generators.coffee` for examples.
 ### HEAD
 
 - Use pygments for code highlighting w/ Marked's async API
+- Use new async API from tinyliquid 0.2
 - Use `he` instead of `ent` for entity encoding
 - Various bugfixes
 
