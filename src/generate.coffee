@@ -462,8 +462,8 @@ loadPost = (config, file, callback) ->
     # Posts are published by default
     unless 'published' of data
       data.published = true
-    # Date comes from filename and gets parsed with timezone
-    data.date = new Date match[1], match[2] - 1, match[3]
+    # Date comes from filename and gets parsed with at noon in timezone
+    data.date = new Date match[1], match[2] - 1, match[3], 12, 0, 0, 0, 0
     slug = match[4]
     # Tags
     if data.tags and typeof data.tags is 'string'
