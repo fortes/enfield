@@ -14,6 +14,8 @@ helpers = require './helpers'
 bundledPlugins = null
 # Regexp for matching post filenames
 postMask = null
+# Global reference for custom tags
+currentState = null
 
 INCLUDE_PATH = '_includes'
 
@@ -75,6 +77,12 @@ processResults = ({config, plugins, includes, layouts, posts, pages, files}, cal
     static_files: files
     tags: {}
     categories: {}
+  }
+
+  # Setup current state
+  currentState = {
+    site
+    page: null
   }
 
   # Add all values from config, but make sure not to clobber any existing
@@ -156,6 +164,8 @@ writePages = (pages, bundle, callback) ->
 writePage = (page, bundle, callback) ->
   log.verbose "generate", "writePage %s", page.url
   { site, config, liquidOptions, compiledLayouts, mergedPlugins, context } = bundle
+
+  currentState.page = page
 
   # Respect published file
   return callback() unless config.future or page.published
