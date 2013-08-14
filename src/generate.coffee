@@ -171,7 +171,7 @@ writePage = (page, bundle, callback) ->
   # Respect published file
   return callback() unless config.future or page.published
 
-  ext = path.extname page.filepath
+  ext = path.extname page.path
 
   # Run conversion
   convertContent ext, page.content, mergedPlugins.converters, (err, result) ->
@@ -456,7 +456,9 @@ loadPost = (config, file, callback) ->
     # Posts always have metadata
     data or= {}
     # Save original filepath
-    data.filepath = file
+    data.path = file
+    # Use path as ID since it should be pretty stable
+    data.id = data.path
     # Posts are published by default
     unless 'published' of data
       data.published = true
@@ -517,9 +519,11 @@ loadOthers = (config, others, callback) ->
         unless 'published' of data
           data.published = true
         # Save original filepath
-        data.filepath = helpers.stripDirectoryPrefix file, config.source
+        data.path = helpers.stripDirectoryPrefix file, config.source
+        # Use path as ID since it should be pretty stable
+        data.id = data.path
         # Use filepath as URL at first (gets changed during output)
-        data.url = data.filepath
+        data.url = data.path
         if config.pretty_urls
           data.url = helpers.stripExtension file
 
