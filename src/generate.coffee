@@ -183,11 +183,13 @@ writePage = (page, bundle, callback) ->
     newExt = result.ext or page.ext
     paginator = page.paginator or {}
 
-    # Update page url with new extension
-    unless newExt is ext
-      # Pretty URLs don't get extensions
-      unless config.pretty_urls and newExt is '.html'
-        page.url = (helpers.stripExtension page.url) + newExt
+    # Pretty URLs don't get extensions
+    if config.pretty_urls and newExt is '.html'
+      page.url = helpers.stripExtension page.url
+    else if newExt isnt ext
+      # Update page url with new extension
+      page.url = (helpers.stripExtension page.url) + newExt
+
 
     # Strip out index.html
     if path.basename(page.url, '.html') is 'index'
@@ -457,8 +459,6 @@ loadPost = (config, file, callback) ->
     data or= {}
     # Save original filepath
     data.path = file
-    # Use path as ID since it should be pretty stable
-    data.id = data.path
     # Posts are published by default
     unless 'published' of data
       data.published = true
@@ -481,6 +481,8 @@ loadPost = (config, file, callback) ->
       data.categories = (data.categories or []).concat directoryCategories
     # Calculate the permalink
     data.url = getPermalink slug, data, config.permalink
+    # Use permalink as unique ID
+    data.id = data.url
 
     data.content = content
 
@@ -523,9 +525,9 @@ loadOthers = (config, others, callback) ->
         # Use path as ID since it should be pretty stable
         data.id = data.path
         # Use filepath as URL at first (gets changed during output)
-        data.url = data.path
-        if config.pretty_urls
-          data.url = helpers.stripExtension file
+        data.url = "/" + data.path
+        # Use permalink as id
+        data.id = data.url
 
         data.content = content
 
