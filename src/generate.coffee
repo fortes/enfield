@@ -107,7 +107,7 @@ processResults = ({config, plugins, includes, layouts, posts, pages, files}, cal
   # Handle {% include %} tags
   context.onInclude (name, callback) ->
     log.silly "generate", "Fetching include for %s", name
-    ast = tinyliquid.compile includes[name], liquidOptions
+    ast = tinyliquid.parse includes[name], liquidOptions
     callback null, ast
 
   convertIncludes includes, mergedPlugins.converters, (err) ->
@@ -304,7 +304,6 @@ convertIncludes = (includes, converters, callback) ->
     (includeName, cb) ->
       convertContent path.extname(includeName), includes[includeName], converters, (err, result) ->
         if err then return callback err
-        log.error 'generate', "Converted include %s: %s", includeName, result.content
         includes[includeName] = result.content
         cb()
     callback
