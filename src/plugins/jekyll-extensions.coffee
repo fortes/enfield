@@ -2,6 +2,7 @@
 moment = require 'moment'
 querystring = require 'querystring'
 he = require 'he'
+log = require 'npmlog'
 
 module.exports =
   filters:
@@ -46,16 +47,16 @@ module.exports =
     # textilize
     # markdownify
   tags:
-    highlight: (tokens, page, site) ->
-      return """<pre><code lang="#{tokens}">"""
+    highlight: (body, page, site) ->
+      return """<pre><code lang="#{body}">"""
 
-    endhighlight: (tokens, page, site) ->
+    endhighlight: (body, page, site) ->
       return "</code></pre>"
 
-    post_url: (tokens, page, site) ->
+    post_url: (body, page, site) ->
       # Must have a post name
-      if tokens.length > 0
-        match = tokens[0].match /^(\d{4})-(\d{2})-(\d{2})-(.+)$/
+      if body
+        match = body.match /^(\d{4})-(\d{2})-(\d{2})-(.+)$/
         if match
           [_, year, month, day, slug] = match
           date = new Date(year, month - 1, day)
@@ -63,7 +64,7 @@ module.exports =
             if (slug is post.slug) and (post.date.getTime() is date.getTime())
               return post.url
 
-      console.error "Error: post_url #{tokens[0]} could not be found"
+      log.warn "post_url", "post_url #{body} could not be found"
       return '#'
 
   generators:

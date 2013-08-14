@@ -83,6 +83,7 @@ processResults = ({config, plugins, includes, layouts, posts, pages, files}, cal
   currentState = {
     site
     page: null
+    liquidOptions: null
   }
 
   # Add all values from config, but make sure not to clobber any existing
@@ -101,8 +102,8 @@ processResults = ({config, plugins, includes, layouts, posts, pages, files}, cal
   # Prepare plugins
   mergedPlugins = mergePlugins bundledPlugins, plugins
 
-  liquidOptions =
-    tags: mergedPlugins.tags
+  liquidOptions = currentState.liquidOptions =
+    customTags: mergedPlugins.tags
 
   # Create base context for tinyliquid
   context = tinyliquid.newContext {
@@ -275,14 +276,15 @@ mergePlugins = (a, b) ->
       merged.filters[name] = filter
     for name, fn of set.tags
       # Wrap custom tags in a simpler API
+      log.silly "generate", "Creating wrapper for custom tag %s", name
       do (name, fn) ->
         merged.tags[name] = (context, name, body) ->
           # Call the plugin function using a much simpler API
           # Need to set page and site variables before running liquid conversion
-          result = fn words, currentState.page, currentState.site
+          result = fn body, currentState.page, currentState.site
 
           # Use tinyliquid helper method to output HTML
-          methods.printString result
+          context.astStack.push tinyliquid.parse result, currentState.liquidOptions
 
   # Converters are sorted by priority
   merged.converters.sort (a, b) -> b.priority - a.priority

@@ -119,8 +119,8 @@ module.exports = {
 ```js
 module.exports = {
   "tags": {
-    "mytag": function(tokens, page, site) {
-      // Tokens is an array of arguments passed within the tag
+    "mytag": function(body, page, site) {
+      // Body is the content string within the tag
       // Page is the object of the current page being converted
       // Site is the same data structure passed to liquid templates
       // (see generators below)
