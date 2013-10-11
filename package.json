@@ -2,7 +2,7 @@
   "name": "enfield",
   "description": "Jekyll-like blog engine for node.js",
   "author": "Filipe Fortes <filipe@fortes.com>",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "dependencies": {
     "async": "~0.1",
     "coffee-script": "~1.4",

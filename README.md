@@ -156,7 +156,7 @@ See `src/plugins/enfield-generators.coffee` for examples.
 
 ## Changelog
 
-### HEAD
+### Version 0.3.1
 
 - New liquid tag `{% page_url %}` for linking to posts (similar to `{% post_url %}` from Jekyll)
 - Use pygments for code highlighting w/ Marked's async API
