@@ -1,7 +1,7 @@
-fs = require 'fs'
+fs   = require 'fs'
 path = require 'path'
-yaml = require 'js-yaml'
 time = require 'time'
+yaml = require 'js-yaml'
 
 module.exports = exports =
   get: (options, callback) ->

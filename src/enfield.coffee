@@ -1,9 +1,9 @@
 # Command-line parser / interface
-fs = require 'fs-extra'
-nopt = require 'nopt'
-path = require 'path'
+fs          = require 'fs-extra'
+log         = require 'npmlog'
 node_static = require 'node-static'
-log = require 'npmlog'
+nopt        = require 'nopt'
+path        = require 'path'
 
 conf = require './config'
 generate = require './generate'

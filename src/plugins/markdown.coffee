@@ -1,5 +1,5 @@
-marked = require 'marked'
 highlight = require('pygments').colorize
+marked    = require 'marked'
 
 # Initialize markdown
 marked.setOptions

@@ -1,10 +1,10 @@
 # Misc helpers
-fs = require 'fs-extra'
-log = require 'npmlog'
-path = require 'path'
-glob = require 'glob'
-yaml = require 'js-yaml'
 async = require 'async'
+fs    = require 'fs-extra'
+glob  = require 'glob'
+log   = require 'npmlog'
+path  = require 'path'
+yaml  = require 'js-yaml'
 
 FRONT_MATTER_DELIMITER = /^---\s*$/
 

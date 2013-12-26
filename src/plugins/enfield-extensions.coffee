@@ -1,11 +1,11 @@
 # Built-in generators
-async = require 'async'
+async  = require 'async'
 coffee = require 'coffee-script'
-fs = require 'fs-extra'
-less = require 'less'
+fs     = require 'fs-extra'
+less   = require 'less'
+log    = require 'npmlog'
+path   = require 'path'
 uglify = require 'uglify-js'
-path = require 'path'
-log = require 'npmlog'
 
 createRedirectHTML = (page) ->
   {url} = page

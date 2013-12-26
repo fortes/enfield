@@ -1,8 +1,8 @@
 # Liquid extensions added by Jekyll
-moment = require 'moment'
+he          = require 'he'
+log         = require 'npmlog'
+moment      = require 'moment'
 querystring = require 'querystring'
-he = require 'he'
-log = require 'npmlog'
 
 module.exports =
   filters:
