@@ -41,12 +41,6 @@ module.exports = exports =
   main: (argv) ->
     parsed = nopt knownOptions, shortHands, argv, 2
 
-    if parsed.version
-      return exports.version()
-    # No command shows help message
-    if parsed.help or parsed.argv.remain.length is 0
-      return exports.help()
-
     if parsed.log
       log.level = parsed.log
       log.verbose "Set log level: #{parsed.log}"
@@ -76,11 +70,14 @@ module.exports = exports =
           .fail (err) ->
             log.error "enfield", "Could not load configuration: #{err.message}"
             process.exit -1
-      when 'help'
-        exports.help()
+      when 'version'
+        exports.version()
       else
-        log.error "enfield", "Invalid command. Use --help for more information"
-        process.exit -1
+        if command is 'help' or not command
+          exports.help()
+        else
+          log.error "enfield", "Invalid command. Use --help for more information"
+          process.exit -1
 
   new: (dir) ->
     unless dir
