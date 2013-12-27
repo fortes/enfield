@@ -7,6 +7,7 @@ path       = require 'path'
 time       = require('time')(Date) # Extend global object
 tinyliquid = require 'tinyliquid'
 toposort   = require 'toposort'
+Q          = require 'q'
 
 helpers    = require './helpers'
 

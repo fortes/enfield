@@ -4,6 +4,7 @@ log         = require 'npmlog'
 node_static = require 'node-static'
 nopt        = require 'nopt'
 path        = require 'path'
+Q           = require 'q'
 
 conf = require './config'
 generate = require './generate'
@@ -53,6 +54,7 @@ module.exports = exports =
       log.level = 'info'
 
     command = parsed.argv.remain[0]
+    log.verbose "enfield", "Received command %s", command
     switch command
       when 'new'
         exports.new parsed.argv.remain[1]
@@ -63,17 +65,17 @@ module.exports = exports =
           continue unless name of knownOptions
           options[name] = value
 
-        conf.get options, (err, config) ->
-          if err
-            log.error "enfield", "Could not get configuration: #{err.message}"
+        conf.get(options)
+          .then (config) ->
+            printConfiguration config
+
+            if command is 'build'
+              exports.build config
+            else
+              exports.serve config
+          .fail (err) ->
+            log.error "enfield", "Could not load configuration: #{err.message}"
             process.exit -1
-
-          printConfiguration config
-
-          if command is 'build'
-            exports.build config
-          else
-            exports.serve config
       when 'help'
         exports.help()
       else

@@ -1,10 +1,14 @@
 fs   = require 'fs'
+log  = require 'npmlog'
 path = require 'path'
 time = require 'time'
+Q    = require 'q'
 yaml = require 'js-yaml'
 
 module.exports = exports =
-  get: (options, callback) ->
+  get: (options) ->
+    deferred = Q.defer()
+
     # Start with defaults
     config = {}
     config[key] = value for key, value of exports.DEFAULTS
@@ -16,25 +20,31 @@ module.exports = exports =
     else if options.source
       config.config = path.join options.source, config.config
 
-    # Read file if it exists
-    fs.exists config.config, (exists) ->
-      if exists
-        str = fs.readFile config.config, (err, contents) ->
-          if err then return callback err
+    log.verbose "config", "Trying to read config from file %s", config.config
 
-          values = yaml.load contents.toString()
-          # Use options from config file
-          config = mergeConfig config, values
-          # ... and command line
-          config = mergeConfig config, options
-
-          callback null, resolveOptions config
-      else
-        # No config, use defaults with overrides from command line
+    # Read file if it exists, use default if not
+    Q.nfcall(fs.readFile, config.config)
+      .then (contents) ->
+        log.verbose "config", "Loading config from file %s", config.config
+        values = yaml.load contents.toString()
+        # Use options from config file
+        config = mergeConfig config, values
+        # ... and command line
         config = mergeConfig config, options
+
+        deferred.resolve resolveOptions config
+      .fail ->
+        log.verbose "config", "Can't read %s. Using defaults", config.config
+
         # Mark config file as not found
         config.config = null
-        callback null, resolveOptions config
+
+        # No config, use defaults with overrides from command line
+        config = mergeConfig config, options
+
+        deferred.resolve resolveOptions config
+
+    deferred.promise
 
   # Use same defaults as Jekyll, per: http://jekyllrb.com/docs/configuration/
   DEFAULTS:
