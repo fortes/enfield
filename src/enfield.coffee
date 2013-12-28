@@ -62,16 +62,21 @@ module.exports = exports =
         conf.get(options)
           .then (config) ->
             printConfiguration config
+            log.silly "enfield", "Full configuration: %j", config
 
             if command is 'build'
               exports.build(config)
                 .fail (err) ->
                   log.error "enfield", "Generation error: #{err.message}"
+                  if err.stack
+                    log.verbose "enfield", "Stack trace: %s", err.stack
                   process.exit -1
             else
               exports.serve(config)
                 .fail (err) ->
                   log.error "enfield", "Could not start server: #{err.message}"
+                  if err.stack
+                    log.verbose "enfield", "Stack trace: %s", err.stack
                   process.exit -1
           .fail (err) ->
             log.error "enfield", "Could not load configuration: #{err.message}"
