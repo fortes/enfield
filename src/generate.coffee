@@ -20,7 +20,10 @@ currentState = null
 
 INCLUDE_PATH = '_includes'
 
-module.exports = exports = (config, callback) ->
+module.exports = exports = (config) ->
+  Q.nfcall generate, config
+
+generate = (config, callback) ->
   log.info "generate", "Begin generation"
   # First-run initialization
   postMask = ///^(\d{4})-(\d{2})-(\d{2})-(.+)\.(#{config.markdown_ext.join '|'}|html)$///

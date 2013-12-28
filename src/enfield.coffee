@@ -64,9 +64,15 @@ module.exports = exports =
             printConfiguration config
 
             if command is 'build'
-              exports.build config
+              exports.build(config)
+                .fail (err) ->
+                  log.error "enfield", "Generation error: #{err.message}"
+                  process.exit -1
             else
-              exports.serve config
+              exports.serve(config)
+                .fail (err) ->
+                  log.error "enfield", "Could not start server: #{err.message}"
+                  process.exit -1
           .fail (err) ->
             log.error "enfield", "Could not load configuration: #{err.message}"
             process.exit -1
@@ -101,32 +107,27 @@ module.exports = exports =
         log.info "enfield", "New site installed in #{resolved}"
       .fail (err) ->
         log.error "enfield", "Could not create new site: #{err.message}"
-
-  build: (config, callback = ->) ->
-    generate config, (err) ->
-      if err
-        log.error "enfield", "Error while generating: %s", err.message
-        callback err
-      else
-        log.info "enfield", "Generation done"
-        callback()
-
-  serve: (config, callback = ->) ->
-    # Watching happens within the build command
-    exports.build config, (err) ->
-      if err
-        log.error "enfield", "Could not generate site: #{err.message}"
         process.exit -1
 
-      log.info "enfield", "Generation done"
+  build: (config) ->
+    generate(config)
+      .then ->
+        log.info "enfield", "Generation done"
 
-      fileServer = new(node_static.Server) config.destination
-      server = require('http').createServer (request, response) ->
-        log.http "server", "[#{timestamp()}] #{request.method} #{request.url}"
-        fileServer.serve request, response
+  serve: (config) ->
+    # Watching happens within the build command
+    exports.build(config)
+      .then ->
+        fileServer = new(node_static.Server) config.destination
+        server = require('http').createServer (request, response) ->
+          log.http "server", "[#{timestamp()}] #{request.method} #{request.url}"
+          fileServer.serve request, response
 
-      log.info "enfield", "Running server at http://#{config.host}:#{config.port}"
-      server.listen config.port, config.host
+        log.info "enfield", "Running server at http://#{config.host}:#{config.port}"
+        server.listen config.port, config.host
+      .fail (err) ->
+        log.error "enfield", "Could not generate site: #{err.message}"
+        process.exit -1
 
   version: ->
     console.log "enfield #{VERSION}"
