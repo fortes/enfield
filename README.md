@@ -156,6 +156,11 @@ See `src/plugins/enfield-generators.coffee` for examples.
 
 ## Changelog
 
+### HEAD
+
+- Use promises via the [Q](https://github.com/kriskowal/q) library instead of callbacks
+- Various bugfixes
+
 ### Version 0.3.1
 
 - New liquid tag `{% page_url %}` for linking to posts (similar to `{% post_url %}` from Jekyll)
