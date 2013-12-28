@@ -13,7 +13,7 @@ module.exports = exports =
     config = {}
     config[key] = value for key, value of exports.DEFAULTS
 
-    # May come in from command line
+    # Config filepath may come in from command line
     if options.config
       config.config = options.config
     # Otherwise, relative to source directory
@@ -48,7 +48,7 @@ module.exports = exports =
 
   # Use same defaults as Jekyll, per: http://jekyllrb.com/docs/configuration/
   DEFAULTS:
-    source: '.'
+    source: './'
     destination: './_site'
     plugins: '_plugins'
     layouts: '_layouts'
@@ -107,9 +107,16 @@ resolveOptions = (config) ->
     # Use system default
     config.timezone = time.currentTimezone
 
-  # Make source relative to current directory
+  # Make source, config, and destination paths relative to current directory
   config.source = path.relative process.cwd(), config.source
-  # Make destination relative to current
+  config.config = path.relative process.cwd(), config.config
   config.destination = path.relative process.cwd(), config.destination
+
+  # Make sure plugins and layout directories are relative to source
+  config.layouts = path.join config.source, config.layouts
+  config.plugins = config.plugins.map (d) -> path.join config.source, d
+
+  # Nicer formatting for current directory as source
+  config.source or= './'
 
   config

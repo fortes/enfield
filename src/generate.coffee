@@ -21,53 +21,54 @@ currentState = null
 INCLUDE_PATH = '_includes'
 
 module.exports = exports = (config) ->
-  Q.nfcall generate, config
-
-generate = (config, callback) ->
   log.info "generate", "Begin generation"
   # First-run initialization
   postMask = ///^(\d{4})-(\d{2})-(\d{2})-(.+)\.(#{config.markdown_ext.join '|'}|html)$///
   time.tzset config.timezone
   Q.all([checkDirectories(config), loadBundledPlugins()])
     .then ->
+      log.verbose "generate", "Initialization complete"
       refreshContent config
     .then ->
       log.info "generate", "Generated %s -> %s", config.source, config.destination
-      callback()
-      return unless config.watch
+      if config.watch
+        watch config
+      return
 
-      destinationPath = path.resolve config.destination
-      gaze path.join(config.source, '**/*'), {debounceDelay: 500}, (err, watcher) ->
-        log.info "watch", "Watching %s for changes", config.source
-        watcher.on 'all', (event, filepath) ->
-          # Ignore any path within the destination directory
-          return if helpers.isWithinDirectory filepath, destinationPath
+watch = (config) ->
+  destinationPath = path.resolve config.destination
+  Q.nfcall(gaze, path.join(config.source, '**/*'), {debounceDelay: 500})
+    .then (watcher) ->
+      log.info "watch", "Watching %s for changes", config.source
+      watcher.on 'all', (event, filepath) ->
+        # Ignore any path within the destination directory
+        return if helpers.isWithinDirectory filepath, destinationPath
 
-          # Ignore any path within hidden/ignored directories
+        # Ignore any path within hidden/ignored directories
 
-          # TODO: Special case _config.yml
-          # TODO: Reload plugins
+        # TODO: Special case _config.yml
+        # TODO: Reload plugins
 
-          log.info "watch", "%s %s", event, filepath
-          refreshContent config, ->
-            log.info "watch", "Regenerated"
-    .fail (err) ->
-      callback err
+        log.info "watch", "%s %s", event, filepath
+        refreshContent(config).then -> log.info "watch", "Regenerated"
 
 refreshContent = (config) ->
   log.silly "generate", "Refreshing content"
 
-  # Get content in parallel:
-  Q.all([
-    # Mimic Jekyll behavior by clearing out destination before regeneration
-    Q.nfcall fs.remove, config.destination
-    loadSitePlugins config
-    loadIncludes config
-    loadLayouts config
-    loadContents config
-  ])
-    .then ([_, plugins, includes, layouts, { posts, pages, files }]) ->
-      log.verbose "generate", "Initial content load complete"
+  # Mimic Jekyll behavior by clearing out destination before regeneration
+  Q.nfcall(fs.remove, config.destination)
+    .then ->
+      log.verbose "generate", "Cleared contents from %s", config.destination
+    .then ->
+      # Get content in parallel:
+      Q.all([
+        loadSitePlugins config
+        loadIncludes config
+        loadLayouts config
+        loadContents config
+      ])
+    .then ([plugins, includes, layouts, { posts, pages, files }]) ->
+      log.verbose "generate", "Plugin, include, layout, and content load complete"
       processResults {config, plugins, includes, layouts, posts, pages, files}
 
 processResults = ({config, plugins, includes, layouts, posts, pages, files}) ->
@@ -331,6 +332,8 @@ loadLayouts = (config) ->
 
   getRawLayouts(config)
     .then (files) ->
+      log.silly "generate", "Found layouts %j in %s",
+        Object.keys(files), config.layouts
       normalized = {}
       # Normalize all paths, stripping out file extension
       for file, {data, content} of files
@@ -418,7 +421,7 @@ normalizeLayoutName = (name, layoutDir) ->
   helpers.stripDirectoryPrefix name, layoutDir
 
 loadContents = (config) ->
-  log.verbose "generator", "Loading contents from %s", config.source
+  log.verbose "generate", "Loading contents from %s", config.source
   helpers.getFileList(path.join(config.source, '**/*'))
     .then (files) ->
       # Segregate files into posts and non-posts (pages and static files)
