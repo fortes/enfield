@@ -61,10 +61,10 @@ refreshContent = (config) ->
   Q.all([
     # Mimic Jekyll behavior by clearing out destination before regeneration
     Q.nfcall fs.remove, config.destination
-    loadSitePlugins(config)
-    Q.nfcall loadIncludes, config
-    Q.nfcall loadLayouts, config
-    Q.nfcall loadContents, config
+    loadSitePlugins config
+    loadIncludes config
+    loadLayouts config
+    loadContents config
   ])
     .then ([_, plugins, includes, layouts, { posts, pages, files }]) ->
       log.verbose "generate", "Initial content load complete"
@@ -131,7 +131,7 @@ processResults = ({config, plugins, includes, layouts, posts, pages, files}) ->
     context
   }
 
-  Q.nfcall(convertIncludes, includes, mergedPlugins.converters)
+  convertIncludes(includes, mergedPlugins.converters)
     .then ->
       # Compile layouts
       compiledLayouts = {}
@@ -154,121 +154,118 @@ processResults = ({config, plugins, includes, layouts, posts, pages, files}) ->
       site.static_files = site.static_files.filter (f) -> !!f
 
       # Now write all content to disk
-      Q.nfcall writePages, site.posts, bundle
+      writePages site.posts, bundle
     .then ->
-      Q.nfcall writePages, site.pages, bundle
+      writePages site.pages, bundle
     .then ->
-      Q.nfcall writeFiles, bundle
+      writeFiles bundle
+    .fail (err) ->
+      console.error err.message
 
-writePages = (pages, bundle, callback) ->
-  async.forEachLimit(
-    pages
-    5
-    (page, cb) -> writePage page, bundle, cb
-    callback
-  )
+writePages = (pages, bundle) ->
+  # TODO: Limit concurrency here
+  Q.all pages.map (page) -> writePage page, bundle
 
-writePage = (page, bundle, callback) ->
+writePage = (page, bundle) ->
   log.verbose "generate", "writePage %s", page.url
   { site, config, liquidOptions, compiledLayouts, mergedPlugins, context } = bundle
 
   currentState.page = page
+  outpath = ''
 
-  # Respect published file
-  return callback() unless config.future or page.published
+  # Ignore unpublished files
+  if config.future or page.published
+    ext = path.extname page.path
 
-  ext = path.extname page.path
+    # Run conversion
+    convertContent(ext, page.content, mergedPlugins.converters)
+      .then (result) ->
+        log.verbose "generate", "Processing %s (%s)", page.title, page.url
 
-  # Run conversion
-  convertContent ext, page.content, mergedPlugins.converters, (err, result) ->
-    if err then return callback err
+        page.content = result.content
+        newExt = result.ext or page.ext
+        paginator = page.paginator or {}
 
-    log.verbose "generate", "Processing %s (%s)", page.title, page.url
+        # Pretty URLs don't get extensions
+        if config.pretty_urls and newExt is '.html'
+          page.url = helpers.stripExtension page.url
+        else if newExt isnt ext
+          # Update page url with new extension
+          page.url = (helpers.stripExtension page.url) + newExt
 
-    page.content = result.content
-    newExt = result.ext or page.ext
-    paginator = page.paginator or {}
+        # Strip out index.html
+        if path.basename(page.url, '.html') is 'index'
+          page.url = path.dirname page.url
 
-    # Pretty URLs don't get extensions
-    if config.pretty_urls and newExt is '.html'
-      page.url = helpers.stripExtension page.url
-    else if newExt isnt ext
-      # Update page url with new extension
-      page.url = (helpers.stripExtension page.url) + newExt
+        # Set up correct path / URL
+        outpath = path.join config.destination, page.url
+        unless path.extname page.url
+          if newExt is '.html'
+            outpath = path.join config.destination, page.url, 'index.html'
 
+        context.setLocals 'page', page
+        context.setLocals 'paginator', paginator
 
-    # Strip out index.html
-    if path.basename(page.url, '.html') is 'index'
-      page.url = path.dirname page.url
+        # Content may contain liquid directives (such as a post listing). Process
+        # now before layout
+        render = tinyliquid.compile page.content, liquidOptions
+        Q.nfcall render, context
+      .then ->
+        log.silly "generate", "Rendered page content for %s", page.url
+        page.content = context.clearBuffer().toString()
 
-    # Set up correct path / URL
-    outpath = path.join config.destination, page.url
-    unless path.extname page.url
-      if newExt is '.html'
-        outpath = path.join config.destination, page.url, 'index.html'
+        # If there's no layout, then we're done
+        unless page.layout and page.layout of compiledLayouts
+          log.verbose "generate", "Writing file without layout: %s", outpath
+          return Q.nfcall fs.outputFile, outpath, page.content
 
-    context.setLocals 'page', page
-    context.setLocals 'paginator', paginator
-
-    # Content may contain liquid directives (such as a post listing). Process
-    # now before layout
-    render = tinyliquid.compile page.content, liquidOptions
-    render context, (err) ->
-      if err
-        log.verbose "generate", "Tinyliquid compile error: %s", err.message
-        callback new Error "Error while processing #{page.url}: #{err.message}"
-        return
-
-      log.silly "generate", "Rendered page content for %s", page.url
-      page.content = context.clearBuffer().toString()
-
-      # If there's no layout, then we're done
-      unless page.layout and page.layout of compiledLayouts
-        log.verbose "generate", "Writing file without layout: %s", outpath
-        fs.outputFile outpath, page.content, callback
-        return
-
-      log.verbose "generate", "Applying layout %s to %s", page.layout, page.url
-      template = compiledLayouts[page.layout]
-      context.setLocals 'content', page.content
-      template context, (err) ->
-        if err
-          log.verbose "generate", "Tinyliquid compile error: %s", err.message
-          callback new Error "Error while processing #{page.url}: #{err.message}"
-          return
-
+        log.verbose "generate", "Applying layout %s to %s", page.layout, page.url
+        template = compiledLayouts[page.layout]
+        context.setLocals 'content', page.content
+        Q.nfcall template, context
+      .then ->
         # Write file
         log.verbose "generate", "Writing file: %s", outpath
-        fs.outputFile outpath, context.clearBuffer(), callback
+        Q.nfcall fs.outputFile, outpath, context.clearBuffer()
 
-writeFiles = (bundle, callback) ->
-  log.verbose "generate", "Writing static files"
-  { site, config, liquidOptions, compiledLayouts } = bundle
-  async.forEachLimit(
-    site.static_files
-    5
-    (filepath, cb) ->
-      relpath = helpers.stripDirectoryPrefix filepath, config.source
-      outpath = path.join config.destination, relpath
-      log.verbose "generate", "Copying %s -> %s", filepath, outpath
-      fs.mkdirs path.dirname outpath
-      fs.copy filepath, outpath, cb
-    callback
-  )
+          # TODO: Re-enable the error checking that happens on tinyliquid
+          # compilation
+          #.fail (err) ->
+            #log.verbose "generate", "Tinyliquid compile error: %s", err.message
+            #throw new Error "Error while processing #{page.url}: #{err.message}"
+          #.fail (err) ->
+            #log.verbose "generate", "Tinyliquid compile error: %s", err.message
+            #throw new Error "Error while processing #{page.url}: #{err.message}"
 
-convertContent = (ext, content, converters, callback) ->
+writeFiles = (bundle) ->
+  log.verbose "generate", "Writing static files: %j", bundle.site.static_files
+  { site } = bundle
+  # TODO: Limit concurrency
+  Q.all site.static_files.map (filepath) -> writeFile filepath, bundle
+
+writeFile = (filepath, bundle) ->
+  { config } = bundle
+  relpath = helpers.stripDirectoryPrefix filepath, config.source
+  outpath = path.join config.destination, relpath
+  log.verbose "generate", "Copying %s -> %s", filepath, outpath
+  Q.nfcall(fs.mkdirs, path.dirname outpath)
+    .then ->
+      Q.nfcall fs.copy, filepath, outpath
+
+convertContent = (ext, content, converters) ->
   for converter in converters
     if converter.matches ext
-      converter.convert content, (err, converted) ->
-        if err then return callback err
-        callback null, {
-          ext: converter.outputExtension ext
-          content: converted
-        }
-      return
+      return Q.nfcall(converter.convert, content)
+        .then (converted) ->
+          return {
+            ext: converter.outputExtension ext
+            content: converted
+          }
 
-  # No converter found, leave unmodified
-  callback null, { ext, content }
+  # No converter found, leave content unmodified
+  deferred = Q.defer()
+  deferred.resolve { ext, content }
+  deferred.promise
 
 mergePlugins = (a, b) ->
   merged =
@@ -299,142 +296,150 @@ mergePlugins = (a, b) ->
 
   merged
 
-loadIncludes = (config, callback) ->
+loadIncludes = (config) ->
   includeDir = path.join config.source, INCLUDE_PATH
 
   log.verbose "generate", "Looking for includes in %s", includeDir
   includes = {}
 
-  getRawIncludes config, (err, files) ->
-    if err then return callback err
+  getRawIncludes(config)
+    .then (files) ->
+      log.verbose "generate", "Found includes: %j", Object.keys(files)
 
-    log.verbose "generate", "Found includes: %s", Object.keys(files).join ', '
+      normalized = {}
+      # Normalize all paths, stripping out file extension
+      for file, {data, content} of files
+        normalized[helpers.stripDirectoryPrefix file, includeDir] = content
 
-    normalized = {}
-    # Normalize all paths, stripping out file extension
-    for file, {data, content} of files
-      normalized[helpers.stripDirectoryPrefix file, includeDir] = content
+      log.verbose "generate", "Normalized includes: %j", Object.keys(normalized)
+      normalized
 
-    log.verbose "generate", "Normalized includes: %s", Object.keys(normalized).join ', '
-    callback null, normalized
+convertIncludes = (includes, converters) ->
+  Q.all Object.keys(includes).map (includeName) ->
+    convertInclude includeName, includes, converters
 
-convertIncludes = (includes, converters, callback) ->
-  async.forEach(
-    Object.keys includes
-    (includeName, cb) ->
-      convertContent path.extname(includeName), includes[includeName], converters, (err, result) ->
-        if err then return callback err
-        includes[includeName] = result.content
-        cb()
-    callback
-  )
+convertInclude = (name, includes, converters) ->
+  log.silly "generate", "Converting include %s", name
+  convertContent(path.extname(name), includes[name], converters)
+    .then (result) ->
+      log.silly "generate", "Converted include %s", name
+      includes[name] = result.content
 
-loadLayouts = (config, callback) ->
-  log.verbose "generate", "Loooking for layouts in %s", config.layouts
+loadLayouts = (config) ->
+  log.verbose "generate", "Looking for layouts in %s", config.layouts
   layouts = {}
 
-  getRawLayouts config, (err, files) ->
-    if err then return callback err
+  getRawLayouts(config)
+    .then (files) ->
+      normalized = {}
+      # Normalize all paths, stripping out file extension
+      for file, {data, content} of files
+        normalized[normalizeLayoutName file, config.layouts] = { data, content }
+        if data?.layout
+          data.layout = normalizeLayoutName data.layout, config.layouts
 
-    normalized = {}
-    # Normalize all paths, stripping out file extension
-    for file, {data, content} of files
-      normalized[normalizeLayoutName file, config.layouts] = { data, content }
-      if data?.layout
-        data.layout = normalizeLayoutName data.layout, config.layouts
+      # Now calculate dependency graph
+      dependencyGraph = []
+      for file, { data, content } of normalized
+        # Skip files that don't have layout, and just use content as-is
+        unless data and data.layout
+          layouts[file] = { data, content }
+          continue
 
-    # Now calculate dependency graph
-    dependencyGraph = []
-    for file, { data, content } of normalized
-      # Skip files that don't have layout, and just use content as-is
-      unless data and data.layout
-        layouts[file] = { data, content }
-        continue
+        fullPath = path.resolve file, data.layout
+        if data.layout of normalized
+          dependencyGraph.push [file, data.layout]
+        else
+          log.warn "generate", "Can't find parent layout %s for layout %s", data.layout, file
 
-      fullPath = path.resolve file, data.layout
-      if data.layout of normalized
-        dependencyGraph.push [file, data.layout]
-      else
-        log.warn "generate", "Can't find parent layout %s for layout %s", data.layout, file
+      # Make sure to resolve files in order
+      try
+        sorted = toposort(dependencyGraph).reverse()
+      catch err
+        throw new Error "Cyclic dependency within layouts"
 
-    # Make sure to resolve files in order
-    try
-      sorted = toposort(dependencyGraph).reverse()
-    catch err
-      callback new Error "Cyclic dependency within layouts"
-      return
+      # Now apply layout to the layout. Can't use liquid for this since we are
+      # just substituting {{ content }} in the layout
+      for file in sorted
+        # Skip if already done
+        continue if file of layouts
 
-    # Now apply layout to the layout. Can't use liquid for this since we are
-    # just substituting {{ content }} in the layout
-    for file in sorted
-      # Skip if already done
-      continue if file of layouts
+        { data, content } = normalized[file]
+        parent = layouts[data.layout]
+        # Run replacement
+        if parent
+          content = parent.content.replace /\{\{\s*content\s*\}\}/, content
 
-      { data, content } = normalized[file]
-      parent = layouts[data.layout]
-      # Run replacement
-      if parent
-        content = parent.content.replace /\{\{\s*content\s*\}\}/, content
+        layouts[file] = {data, content}
 
-      layouts[file] = {data, content}
+      log.verbose "generate", "Load layouts complete"
+      layouts
 
-    log.verbose "generate", "Load layouts complete"
-    callback null, layouts
+getRawIncludes = (config) ->
+  deferred = Q.defer()
 
-getRawIncludes = (config, callback) ->
   includes = path.join config.source, INCLUDE_PATH
-  fs.exists includes, (exists) ->
-    unless exists
-      log.verbose "generate", "Missing include directory: %s", includes
-      return callback null, {}
+  Q.nfcall(fs.stat, includes)
+    .then (stat) ->
+      log.verbose "generate", "Loading includes from %s", includes
+      deferred.resolve helpers.mapFiles(
+        path.join(includes, '**/*')
+        helpers.getMetadataAndContent
+      )
+    .fail (err) ->
+      log.verbose "generate", "Couldn't load includes from: %s (%s)", includes,
+        err.message
+      deferred.resolve {}
 
-    helpers.mapFiles(
-      path.join(includes, '**/*')
-      helpers.getMetadataAndContent
-      callback
-    )
+  deferred.promise
 
-getRawLayouts = (config, callback) ->
-  fs.exists config.layouts, (exists) ->
-    unless exists
-      log.warn "generate", "Missing layout directory: %s", config.layouts
-      return callback null, {}
+getRawLayouts = (config) ->
+  deferred = Q.defer()
 
-    helpers.mapFiles(
-      path.join(config.layouts, '**/*')
-      helpers.getMetadataAndContent
-      callback
-    )
+  Q.nfcall(fs.stat, config.layouts)
+    .then (exists) ->
+      log.silly "generate", "Loading layouts from %s", config.layouts
+      deferred.resolve(
+        helpers.mapFiles(
+          path.join(config.layouts, '**/*')
+          helpers.getMetadataAndContent
+        )
+      )
+    .fail ->
+      log.verbose "generate", "Couldn't load layouts from: %s (%s)",
+        config.layouts, err.message
+      deferred.resolve {}
+
+  deferred.promise
 
 normalizeLayoutName = (name, layoutDir) ->
   # Remove extension
   name = helpers.stripExtension name
   helpers.stripDirectoryPrefix name, layoutDir
 
-loadContents = (config, callback) ->
-  helpers.getFileList(
-    path.join(config.source, '**/*')
-    (err, files) ->
+loadContents = (config) ->
+  log.verbose "generator", "Loading contents from %s", config.source
+  helpers.getFileList(path.join(config.source, '**/*'))
+    .then (files) ->
       # Segregate files into posts and non-posts (pages and static files)
       { posts, others } = filterFiles config, files
 
-      async.parallel [
-        (cb) -> loadPosts config, posts, cb
-        (cb) -> loadOthers config, others, cb
-      ], (err, [posts, { pages, files }]) ->
-        log.verbose "generate", "Content loading complete"
-        callback null, { posts, pages, files }
-  )
+      Q.all [
+        loadPosts config, posts
+        loadOthers config, others
+      ]
+    .then ([posts, { pages, files }]) ->
+      log.verbose "generate", "Content loading complete"
+      { posts, pages, files }
 
-loadPosts = (config, files, callback) ->
+loadPosts = (config, files) ->
   posts = []
   log.verbose "generate", "Loading posts %s", files.join ', '
-  async.forEachLimit(
-    files
-    5
-    (file, cb) -> loadPost config, file, (err, post) -> posts.push post; cb err
-    (err) ->
-      if err then return callback err
+  # TODO: Rate limit
+  Q.all(files.map (file) ->
+    loadPost(config, file).then (post) -> posts.push post
+  )
+    .then ->
       # Sort posts by date
       posts = posts.sort (a, b) -> b.date - a.date
       # Setup previous / next on each post
@@ -451,49 +456,48 @@ loadPosts = (config, files, callback) ->
       posts.first = posts[0]
       posts.last = posts[posts.length - 1]
 
-      callback null, posts
-  )
+      posts
 
-loadPost = (config, file, callback) ->
+loadPost = (config, file) ->
   log.silly "generate", "Loading post: %s", file
-  helpers.getMetadataAndContent file, (err, val) ->
-    if err then return callback err
-    { data, content } = val
-    match = path.basename(file).match postMask
+  helpers.getMetadataAndContent(file)
+    .then (val) ->
+      { data, content } = val
+      match = path.basename(file).match postMask
 
-    # Posts always have metadata
-    data or= {}
-    # Save original filepath
-    data.path = file
-    # Posts are published by default
-    unless 'published' of data
-      data.published = true
-    # Date comes from filename and gets parsed with at noon in timezone
-    data.date = new Date match[1], match[2] - 1, match[3], 12, 0, 0, 0, 0
-    slug = match[4]
-    # Tags
-    if data.tags and typeof data.tags is 'string'
-      data.tags = data.tags.split /\s+/
-    # Alias category to categories
-    if data.category and not data.categories
-      data.categories = data.category
-      delete data.category
-    # Categories
-    if data.categories and typeof data.categories is 'string'
-      data.categories = data.categories.split /\s+/
-    # Add any categories from the directory
-    directoryCategories = path.dirname(file).split('/').filter (f) -> f isnt '_posts'
-    if directoryCategories.length
-      data.categories = (data.categories or []).concat directoryCategories
-    # Calculate the permalink
-    data.url = getPermalink slug, data, config.permalink
-    # Use permalink as unique ID
-    data.id = data.url
+      # Posts always have metadata
+      data or= {}
+      # Save original filepath
+      data.path = file
+      # Posts are published by default
+      unless 'published' of data
+        data.published = true
+      # Date comes from filename and gets parsed with at noon in timezone
+      data.date = new Date match[1], match[2] - 1, match[3], 12, 0, 0, 0, 0
+      slug = match[4]
+      # Tags
+      if data.tags and typeof data.tags is 'string'
+        data.tags = data.tags.split /\s+/
+      # Alias category to categories
+      if data.category and not data.categories
+        data.categories = data.category
+        delete data.category
+      # Categories
+      if data.categories and typeof data.categories is 'string'
+        data.categories = data.categories.split /\s+/
+      # Add any categories from the directory
+      directoryCategories = path.dirname(file).split('/').filter (f) -> f isnt '_posts'
+      if directoryCategories.length
+        data.categories = (data.categories or []).concat directoryCategories
+      # Calculate the permalink
+      data.url = getPermalink slug, data, config.permalink
+      # Use permalink as unique ID
+      data.id = data.url
 
-    data.content = content
+      data.content = content
 
-    log.silly "generate", "Post loading complete: %s", file
-    callback null, data
+      log.verbose "generate", "Loaded post: %s", file
+      data
 
 getPermalink = (slug, data, permalinkStyle) ->
   return permalinkStyle
@@ -507,45 +511,48 @@ getPermalink = (slug, data, permalinkStyle) ->
     .replace('//', '/')
 
 # Generate a list of pages and static files
-loadOthers = (config, others, callback) ->
+loadOthers = (config, others) ->
+  log.silly "generate", "Loading non-posts %j", others
   pages = []
   files = []
-  async.forEachLimit(
-    others
-    5
-    (file, cb) ->
-      helpers.getMetadataAndContent file, (err, val) ->
-        if err then return cb err
+  # TODO: Rate limit
+  Q.all(
+    others.map (file) ->
+      loadPageOrFile(config, file)
+        .then ({page, file}) ->
+          if page then pages.push page else files.push file
+  ).then ->
+    log.silly "generate", "Non-post load complete"
+    {pages, files}
 
-        # Nothing to do with static files
-        { data, content } = val
-        unless data
-          files.push file
-          return cb()
+loadPageOrFile = (config, file) ->
+  log.silly "generate", "Loading post or file %s", file
+  helpers.getMetadataAndContent(file)
+    .then (val) ->
+      { data, content } = val
 
-        # Pages are published by default
-        unless 'published' of data
-          data.published = true
-        # Save original filepath
-        data.path = helpers.stripDirectoryPrefix file, config.source
-        # Use path as ID since it should be pretty stable
-        data.id = data.path
-        # Use filepath as URL at first (gets changed during output)
-        data.url = "/" + data.path
-        # Use permalink as id
-        data.id = data.url
+      # Nothing to do for static files
+      unless data
+        log.silly "generate", "Found file %s", file
+        return { file, page: null }
 
-        data.content = content
+      # Pages are published by default
+      unless 'published' of data
+        data.published = true
+      # Save original filepath
+      data.path = helpers.stripDirectoryPrefix file, config.source
+      # Use path as ID since it should be pretty stable
+      data.id = data.path
+      # Use filepath as URL at first (gets changed during output)
+      data.url = "/" + data.path
+      # Use permalink as id
+      data.id = data.url
 
-        # Add to collection
-        pages.push data
+      data.content = content
 
-        cb()
-    (err) ->
-      if err then return callback err
-      callback null, { pages, files }
-  )
+      log.silly "generate", "Loaded page %s", file
 
+      { page: data, file }
 
 filterFiles = (config, files) ->
   posts = []
@@ -587,6 +594,7 @@ checkSourceDirectory = (dir) ->
   isDirectory(dir)
     .then (result) ->
       if result
+        log.silly "generate", "Source directory present %s", dir
         deferred.resolve()
       else
         deferred.reject new Error "Source is not a directory: #{dir}"
@@ -602,9 +610,11 @@ checkDestinationDirectory = (dir) ->
   isDirectory(dir)
     .then (result) ->
       if result
+        log.silly "generate", "Destination directory present %s", dir
         deferred.resolve()
       else
         # Exists but isn't directory
+        log.error "generate", "Destination is not a directory %s", dir
         deferred.reject new Error "Destination is not a directory: #{dir}"
     .fail ->
       # Create the directory
@@ -636,10 +646,7 @@ loadSitePlugins = (config) ->
   # Only check directories that actually exist
   Q.allSettled(dirs.map (dir) -> Q.nfcall fs.stat, dir)
     .then (results) ->
-      pluginDirs = []
-      for result, i in results
-        continue if result.state isnt 'fulfilled'
-        pluginDirs.push dirs[i]
+      pluginDirs = dirs.filter (dir, i) -> results[i].state is 'fulfilled'
 
       loadPlugins pluginDirs
 
@@ -665,7 +672,7 @@ loadPlugins = (dirs) ->
           ext = path.extname f
           ext in ['.js','.coffee'] or fs.statSync(f).isDirectory()
 
-      log.silly "generate", "Found plugins %s in %s",
+      log.silly "generate", "Found plugins %j in %j",
         allFiles.map(path.basename), dirs
 
       for file in allFiles

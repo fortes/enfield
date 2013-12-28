@@ -127,6 +127,8 @@ module.exports = exports =
         server.listen config.port, config.host
       .fail (err) ->
         log.error "enfield", "Could not generate site: #{err.message}"
+        if err.stack
+          log.verbose "enfield", "Stack trace: %s", err.stack
         process.exit -1
 
   version: ->
