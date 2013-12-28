@@ -96,11 +96,11 @@ module.exports = exports =
         fs.removeSync resolved
 
     # TODO: Copy site_template over
-    fs.copy path.join(__dirname, '../site_template'), resolved, (err) ->
-      if err
-        log.error "enfield", "Could not create new site: #{err.message}"
-      else
+    Q.nfcall(fs.copy, path.join(__dirname, '../site_template'), resolved)
+      .then ->
         log.info "enfield", "New site installed in #{resolved}"
+      .fail (err) ->
+        log.error "enfield", "Could not create new site: #{err.message}"
 
   build: (config, callback = ->) ->
     generate config, (err) ->
