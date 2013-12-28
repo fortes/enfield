@@ -25,48 +25,48 @@ module.exports = exports = (config, callback) ->
   # First-run initialization
   postMask = ///^(\d{4})-(\d{2})-(\d{2})-(.+)\.(#{config.markdown_ext.join '|'}|html)$///
   time.tzset config.timezone
-  async.parallel [
-    # Check directories for existence
-    (cb) -> checkDirectories config, cb
-    # Built-in enfield plugins
-    loadBundledPlugins
-  ], (err) -> refreshContent config, (err) ->
-    if err
-      return callback err
+  Q.all([checkDirectories(config), loadBundledPlugins()])
+    .then ->
+      Q.nfcall refreshContent, config
+    .then ->
+      log.info "generate", "Generated %s -> %s", config.source, config.destination
+      callback()
+      return unless config.watch
 
-    log.info "generate", "Generated %s -> %s", config.source, config.destination
-    callback()
-    return unless config.watch
+      destinationPath = path.resolve config.destination
+      gaze path.join(config.source, '**/*'), {debounceDelay: 500}, (err, watcher) ->
+        log.info "watch", "Watching %s for changes", config.source
+        watcher.on 'all', (event, filepath) ->
+          # Ignore any path within the destination directory
+          return if helpers.isWithinDirectory filepath, destinationPath
 
-    destinationPath = path.resolve config.destination
-    gaze path.join(config.source, '**/*'), {debounceDelay: 500}, (err, watcher) ->
-      log.info "watch", "Watching %s for changes", config.source
-      watcher.on 'all', (event, filepath) ->
-        # Ignore any path within the destination directory
-        return if helpers.isWithinDirectory filepath, destinationPath
+          # Ignore any path within hidden/ignored directories
 
-        # Ignore any path within hidden/ignored directories
+          # TODO: Special case _config.yml
+          # TODO: Reload plugins
 
-        # TODO: Special case _config.yml
-        # TODO: Reload plugins
-
-        log.info "watch", "%s %s", event, filepath
-        refreshContent config, ->
-          log.info "watch", "Regenerated"
+          log.info "watch", "%s %s", event, filepath
+          refreshContent config, ->
+            log.info "watch", "Regenerated"
+    .fail (err) ->
+      callback err
 
 refreshContent = (config, callback) ->
+  log.silly "generate", "Refreshing content"
+
   # Get content in parallel:
-  async.parallel [
-    # Mimic Jekyll behavior by clearing out destination first
-    (cb) -> fs.remove config.destination, cb
-    (cb) -> loadSitePlugins config, cb
-    (cb) -> loadIncludes config, cb
-    (cb) -> loadLayouts config, cb
-    (cb) -> loadContents config, cb
-  ], (err, [_, plugins, includes, layouts, { posts, pages, files }]) ->
-    if err then return callback err
-    log.verbose "generate", "Initial content load complete"
-    processResults {config, plugins, includes, layouts, posts, pages, files}, callback
+  Q.all([
+    # Mimic Jekyll behavior by clearing out destination before regeneration
+    Q.nfcall fs.remove, config.destination
+    loadSitePlugins(config)
+    Q.nfcall loadIncludes, config
+    Q.nfcall loadLayouts, config
+    Q.nfcall loadContents, config
+  ])
+    .then ([_, plugins, includes, layouts, { posts, pages, files }]) ->
+      log.verbose "generate", "Initial content load complete"
+      processResults {config, plugins, includes, layouts, posts, pages, files}, callback
+    .fail (err) -> callback err
 
 processResults = ({config, plugins, includes, layouts, posts, pages, files}, callback) ->
   # Create site data structure
@@ -568,24 +568,54 @@ filterFiles = (config, files) ->
 
   { posts, others }
 
-checkDirectories = (config, callback) ->
-  # Check if source & destination directories are there
-  async.series [
-    (cb) -> fs.exists config.source, (exists) ->
-      if exists then cb()
-      else cb new Error "Source directory does not exist: #{config.source}"
-    (cb) -> fs.exists config.destination, (exists) ->
-      if exists
-        fs.stat config.destination, (err, stat) ->
-          if stat.isDirectory()
-            cb()
-          else
-            cb new Error "Destination is not a directory: #{config.destination}"
-      else
-        fs.mkdirs config.destination, cb
-  ], callback
+checkDirectories = (config) ->
+  Q.all [
+    checkSourceDirectory config.source
+    checkDestinationDirectory config.destination
+  ]
 
-loadBundledPlugins = (callback) ->
+# Must exist and be a directory
+checkSourceDirectory = (dir) ->
+  log.silly "generate", "Checking for source directory %s", dir
+  deferred = Q.defer()
+  dir or= '.'
+  isDirectory(dir)
+    .then (result) ->
+      if result
+        deferred.resolve()
+      else
+        deferred.reject new Error "Source is not a directory: #{dir}"
+    .fail ->
+      deferred.reject new Error "Source directory does not exist: #{dir}"
+  deferred.promise
+
+# May either not exist (in which case it will be created), or must exist and be
+# a directory
+checkDestinationDirectory = (dir) ->
+  log.silly "generate", "Checking for destination directory %s", dir
+  deferred = Q.defer()
+  isDirectory(dir)
+    .then (result) ->
+      if result
+        deferred.resolve()
+      else
+        # Exists but isn't directory
+        deferred.reject new Error "Destination is not a directory: #{dir}"
+    .fail ->
+      # Create the directory
+      log.verbose "generate", "Creating destination directory %s", dir
+      deferred.resolve Q.nfcall fs.mkdirs, dir
+
+  deferred.promise
+
+# True if file is directory
+# False if file exists but isn't directory
+# Fails if file does not exist
+isDirectory = (dir) ->
+  Q.nfcall(fs.stat, dir).then (stat) -> stat.isDirectory()
+
+# Built-in enfield plugins
+loadBundledPlugins = ->
   loadPlugins([path.join __dirname, 'plugins'])
     .then (plugins) ->
       bundledPlugins = plugins
@@ -593,19 +623,20 @@ loadBundledPlugins = (callback) ->
       for key, filter of tinyliquid.filters
         unless key of bundledPlugins.filters
           bundledPlugins.filters[key] = filter
-      callback()
-    .fail (err) ->
-      callback err
+      return
 
-loadSitePlugins = (config, callback) ->
+loadSitePlugins = (config) ->
   # Resolve directories relative to source
-  dirs = config.plugins.map (dir) ->
-    path.resolve config.source, dir
-  async.filter dirs, fs.exists, (results) ->
-    loadPlugins(results)
-      .then (plugins) ->
-        callback null, plugins
-      .fail (err) -> callback err
+  dirs = config.plugins.map (dir) -> path.resolve config.source, dir
+  # Only check directories that actually exist
+  Q.allSettled(dirs.map (dir) -> Q.nfcall fs.stat, dir)
+    .then (results) ->
+      pluginDirs = []
+      for result, i in results
+        continue if result.state isnt 'fulfilled'
+        pluginDirs.push dirs[i]
+
+      loadPlugins pluginDirs
 
 loadPlugins = (dirs) ->
   log.verbose "generate", "Looking for plugins in: %s", dirs.join ', '
@@ -633,25 +664,27 @@ loadPlugins = (dirs) ->
         allFiles.map(path.basename), dirs
 
       for file in allFiles
-        log.verbose "generate", "Loading plugin: %s", file
-        # Load file
-        plugin = require file
-
-        if 'filters' of plugin
-          for key, filter of plugin['filters']
-            log.silly "generate", "Found filter for %s", key
-            plugins.filters[key] = filter
-        if 'tags' of plugin
-          for key, tag of plugin['tags']
-            log.silly "generate", "Found tag for %s", key
-            plugins.tags[key] = tag
-        if 'converters' of plugin
-          for key, converter of plugin['converters']
-            log.silly "generate", "Found converter for %s", key
-            plugins.converters.push converter
-        if 'generators' of plugin
-          for key, generator of plugin['generators']
-            log.silly "generate", "Found generator for %s", key
-            plugins.generators.push generator
+        loadFileIntoPlugins file, plugins
 
       plugins
+
+loadFileIntoPlugins = (file, plugins) ->
+  log.verbose "generate", "Loading plugin: %s", file
+  plugin = require file
+
+  if 'filters' of plugin
+    for key, filter of plugin['filters']
+      log.silly "generate", "Found filter for %s", key
+      plugins.filters[key] = filter
+  if 'tags' of plugin
+    for key, tag of plugin['tags']
+      log.silly "generate", "Found tag for %s", key
+      plugins.tags[key] = tag
+  if 'converters' of plugin
+    for key, converter of plugin['converters']
+      log.silly "generate", "Found converter for %s", key
+      plugins.converters.push converter
+  if 'generators' of plugin
+    for key, generator of plugin['generators']
+      log.silly "generate", "Found generator for %s", key
+      plugins.generators.push generator
