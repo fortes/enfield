@@ -586,59 +586,72 @@ checkDirectories = (config, callback) ->
   ], callback
 
 loadBundledPlugins = (callback) ->
-  loadPlugins [path.join(__dirname, 'plugins')], (err, plugins) ->
-    if err then return callback err
-
-    bundledPlugins = plugins
-    # Copy default filters, but don't overwrite
-    for key, filter of tinyliquid.filters
-      unless key of bundledPlugins.filters
-        bundledPlugins.filters[key] = filter
-
-    callback()
+  loadPlugins([path.join __dirname, 'plugins'])
+    .then (plugins) ->
+      bundledPlugins = plugins
+      # Copy default filters, but don't overwrite
+      for key, filter of tinyliquid.filters
+        unless key of bundledPlugins.filters
+          bundledPlugins.filters[key] = filter
+      callback()
+    .fail (err) ->
+      callback err
 
 loadSitePlugins = (config, callback) ->
   # Resolve directories relative to source
   dirs = config.plugins.map (dir) ->
     path.resolve config.source, dir
   async.filter dirs, fs.exists, (results) ->
-    loadPlugins results, callback
+    loadPlugins(results)
+      .then (plugins) ->
+        callback null, plugins
+      .fail (err) -> callback err
 
-loadPlugins = (dirs, callback) ->
-  plugins =
-    filters: {}
-    tags: {}
-    converters: []
-    generators: []
-
-  unless dirs.length
-    return callback null, plugins
-
+loadPlugins = (dirs) ->
   log.verbose "generate", "Looking for plugins in: %s", dirs.join ', '
-  async.map dirs, fs.readdir, (err, results) ->
-    allFiles = []
-    for result, i in results
-      continue unless result
-      # Map relative paths
-      allFiles = allFiles.concat(result.map (f) -> path.join dirs[i], f)
+  Q.all(dirs.map (dir) -> Q.nfcall fs.readdir, dir)
+    .then (dirListings) ->
+      plugins =
+        filters: {}
+        tags: {}
+        converters: []
+        generators: []
 
-    for file in allFiles
-      ext = path.extname file
-      if (ext is '.js' or ext is '.coffee') or fs.statSync(file).isDirectory()
+      # Make a single list of eligible files
+      allFiles = dirListings
+        # Resolve Paths
+        .map (listing, i) ->
+          listing.map (f) -> path.join dirs[i], f
+        # Merge lists
+        .reduceRight(((prev, listing) -> prev.concat listing), [])
+        # Remove non-code files
+        .filter (f) ->
+          ext = path.extname f
+          ext in ['.js','.coffee'] or fs.statSync(f).isDirectory()
+
+      log.silly "generate", "Found plugins %s in %s",
+        allFiles.map(path.basename), dirs
+
+      for file in allFiles
         log.verbose "generate", "Loading plugin: %s", file
         # Load file
         plugin = require file
+
         if 'filters' of plugin
           for key, filter of plugin['filters']
+            log.silly "generate", "Found filter for %s", key
             plugins.filters[key] = filter
         if 'tags' of plugin
           for key, tag of plugin['tags']
+            log.silly "generate", "Found tag for %s", key
             plugins.tags[key] = tag
         if 'converters' of plugin
           for key, converter of plugin['converters']
+            log.silly "generate", "Found converter for %s", key
             plugins.converters.push converter
         if 'generators' of plugin
           for key, generator of plugin['generators']
+            log.silly "generate", "Found generator for %s", key
             plugins.generators.push generator
 
-    callback null, plugins
+      plugins
