@@ -30,7 +30,7 @@ generate = (config, callback) ->
   time.tzset config.timezone
   Q.all([checkDirectories(config), loadBundledPlugins()])
     .then ->
-      Q.nfcall refreshContent, config
+      refreshContent config
     .then ->
       log.info "generate", "Generated %s -> %s", config.source, config.destination
       callback()
@@ -54,7 +54,7 @@ generate = (config, callback) ->
     .fail (err) ->
       callback err
 
-refreshContent = (config, callback) ->
+refreshContent = (config) ->
   log.silly "generate", "Refreshing content"
 
   # Get content in parallel:
@@ -68,10 +68,9 @@ refreshContent = (config, callback) ->
   ])
     .then ([_, plugins, includes, layouts, { posts, pages, files }]) ->
       log.verbose "generate", "Initial content load complete"
-      processResults {config, plugins, includes, layouts, posts, pages, files}, callback
-    .fail (err) -> callback err
+      processResults {config, plugins, includes, layouts, posts, pages, files}
 
-processResults = ({config, plugins, includes, layouts, posts, pages, files}, callback) ->
+processResults = ({config, plugins, includes, layouts, posts, pages, files}) ->
   # Create site data structure
   site = {
     time: Date.now()
@@ -118,45 +117,48 @@ processResults = ({config, plugins, includes, layouts, posts, pages, files}, cal
   }
 
   # Handle {% include %} tags
-  context.onInclude (name, callback) ->
+  context.onInclude (name, cb) ->
     log.silly "generate", "Fetching include for %s", name
     ast = tinyliquid.parse includes[name], liquidOptions
-    callback null, ast
+    cb null, ast
 
-  convertIncludes includes, mergedPlugins.converters, (err) ->
-    if err then return callback err
+  bundle = {
+    site
+    config
+    liquidOptions
+    compiledLayouts: null
+    mergedPlugins
+    context
+  }
 
-    # Compile layouts
-    compiledLayouts = {}
-    for name, {data, content} of layouts
-      try
-        compiledLayouts[name] = tinyliquid.compile content, liquidOptions
-      catch err
-        callback new Error "Error while compiling layout: #{err.message}"
-        return
+  Q.nfcall(convertIncludes, includes, mergedPlugins.converters)
+    .then ->
+      # Compile layouts
+      compiledLayouts = {}
+      for name, {data, content} of layouts
+        try
+          compiledLayouts[name] = tinyliquid.compile content, liquidOptions
+        catch err
+          throw new Error "Error while compiling layout: #{err.message}"
 
-    log.verbose "generate", "Reading complete. Preparing to write"
+      bundle.compiledLayouts = compiledLayouts
 
-    # Run generators
-    async.forEachSeries(
-      mergedPlugins.generators,
-      (generator, cb) -> generator site, cb
-      (err) ->
-        if err then return callback err
+      log.verbose "generate", "Reading complete. Preparing to write"
 
-        # Filter out any files blanked by generators
-        site.static_files = site.static_files.filter (f) -> !!f
+      # Run generators across site
+      Q.all(
+        mergedPlugins.generators.map (generator) -> Q.nfcall generator, site
+      )
+    .then ->
+      # Filter out any files blanked by generators
+      site.static_files = site.static_files.filter (f) -> !!f
 
-        # Now write all content to disk
-        bundle = { site, config, liquidOptions, compiledLayouts, mergedPlugins, context }
-        async.series([
-          # Write posts before pages, since pagination, etc depend on
-          # post-conversion HTML
-          (cb) -> writePages site.posts, bundle, cb
-          (cb) -> writePages site.pages, bundle, cb
-          (cb) -> writeFiles bundle, cb
-        ], callback)
-    )
+      # Now write all content to disk
+      Q.nfcall writePages, site.posts, bundle
+    .then ->
+      Q.nfcall writePages, site.pages, bundle
+    .then ->
+      Q.nfcall writeFiles, bundle
 
 writePages = (pages, bundle, callback) ->
   async.forEachLimit(
