@@ -37,7 +37,10 @@
   "bugs": {
     "url": "https://github.com/fortes/enfield/issues"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "mocha": "~1.16.2",
+    "sinon": "~1.7.3"
+  },
   "bin": {
     "enfield": "./bin/enfield.coffee"
   },
@@ -49,7 +52,12 @@
   "keywords": [
     "blog",
     "static",
+    "generator",
     "jekyll"
   ],
+  "scripts": {
+    "test": "NODE_ENV=test mocha --reporter tap --compilers coffee:coffee-script",
+    "test-watch": "NODE_ENV=test mocha --watch --reporter dot --compilers coffee:coffee-script"
+  },
   "license": "MIT"
 }

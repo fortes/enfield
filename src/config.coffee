@@ -113,10 +113,15 @@ resolveOptions = (config) ->
   config.destination = path.relative process.cwd(), config.destination
 
   # Make sure plugins and layout directories are relative to source
-  config.layouts = path.join config.source, config.layouts
-  config.plugins = config.plugins.map (d) -> path.join config.source, d
+  config.layouts = path.resolve config.source, config.layouts
+  config.plugins = config.plugins.map (d) -> path.resolve config.source, d
 
   # Nicer formatting for current directory as source
   config.source or= './'
 
   config
+
+# Export internal functions when testing
+if process.env.NODE_ENV is 'test'
+  exports.mergeConfig = mergeConfig
+  exports.resolveOptions = resolveOptions
