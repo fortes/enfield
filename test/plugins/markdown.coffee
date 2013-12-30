@@ -5,6 +5,12 @@ sinon    = require "sinon"
 {converters} = require "../../src/plugins/markdown"
 
 describe "Markdown converter", ->
+  sandbox = null
+  beforeEach ->
+    sandbox = sinon.sandbox.create()
+  afterEach ->
+    sandbox.restore()
+
   it "Matches .md and .markdown extensions", ->
     assert converters.markdown.matches(".md"), ".md"
     assert converters.markdown.matches(".markdown"), ".markdown"
@@ -21,26 +27,21 @@ describe "Markdown converter", ->
       done()
 
   it "Highlights code", (done) ->
-    md = """``` js
-var foo = "bar";
-```"""
     pygmentsOutput = '<div class="highlight"><pre>
 <span class="kd">var</span> <span class="nx">foo</span> <span class="o">=</span>
-<span class="s2">&quot;bar&quot;</span><span class="p">;</span>\n
+ <span class="s2">&quot;bar&quot;</span><span class="p">;</span>\n
 </pre></div>\n'
     expected = '<pre><code class="lang-js">
 <span class="kd">var</span> <span class="nx">foo</span> <span class="o">=</span>
  <span class="s2">&quot;bar&quot;</span><span class="p">;</span>\n
 </code></pre>\n'
 
-    sandbox = null
-    beforeEach ->
-      sandbox = sinon.sandbox.create()
-      sandbox.stub(pygments, "highlight")
-        .callsArgWithAsync(2, null, pygmentsOutput)
+    sandbox.stub(pygments, "colorize")
+      .callsArgWithAsync(3, pygmentsOutput)
 
-    afterEach ->
-      sandbox?.restore()
+    md = """``` js
+var foo = "bar";
+```"""
 
     converters.markdown.convert md, (err, output) ->
       assert !err, "No error thrown"

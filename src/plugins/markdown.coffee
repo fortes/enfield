@@ -1,12 +1,12 @@
-highlight = require('pygments').colorize
-marked    = require 'marked'
+pygments = require('pygments')
+marked   = require 'marked'
 
 # Initialize markdown
 marked.setOptions
   gfm: true
   smartypants: true
   highlight: (code, lang, callback) ->
-    highlight code, lang, 'html', (data) ->
+    pygments.colorize code, lang, 'html', (data) ->
       # Strip out the HTML wrapper added around the code
       data = data.replace(
         # Final \s is for newline
