@@ -1,6 +1,6 @@
 language: node_js
 -before_script:
-  - "sudo pip install pygments"
+  - "pip install pygments"
 node_js:
   - "0.10"
   - "0.08"
