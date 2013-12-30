@@ -60,7 +60,7 @@ module.exports =
           }
 
       # Do the callback async to avoid crazy stack traces
-      setTimeout callback, 0
+      process.nextTick callback
 
     # Compile CoffeeScript files to minified JS
     coffeeScript: (site, callback) ->
@@ -69,11 +69,18 @@ module.exports =
           # Exclude from output
           site.static_files[i] = null
 
-          # Compile and minify
-          fileContents = fs.readFileSync(filepath).toString()
           try
+            # Compile and minify
+            # TODO: Move all these to async
+            fileContents = fs.readFileSync(filepath).toString()
             compiled = coffee.compile fileContents
-            minified = uglify compiled
+
+            # Uglify2 new API
+            ast = uglify.parse compiled
+            ast.figure_out_scope()
+            compressor = uglify.Compressor()
+            ast = ast.transform compressor
+            minified = ast.print_to_string()
 
             # Output
             outPath = filepath.replace /\.coffee$/, ''
@@ -85,9 +92,10 @@ module.exports =
             }
           catch err
             log.warn "CoffeeScript Compilation Error: #{err.message}".red
+            console.log err.message
 
       # Do the callback async to avoid crazy stack traces
-      setTimeout callback, 0
+      process.nextTick callback
 
     # Compile LESS files into minified CSS
     lessCSS: (site, callback) ->

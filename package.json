@@ -56,8 +56,8 @@
     "jekyll"
   ],
   "scripts": {
-    "test": "NODE_ENV=test mocha --reporter tap --compilers coffee:coffee-script",
-    "test-watch": "NODE_ENV=test mocha --watch --reporter dot --compilers coffee:coffee-script"
+    "test": "NODE_ENV=test mocha --recursive --reporter tap --compilers coffee:coffee-script",
+    "test-watch": "NODE_ENV=test mocha --recursive --watch --reporter dot --compilers coffee:coffee-script"
   },
   "license": "MIT"
 }

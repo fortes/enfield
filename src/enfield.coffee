@@ -43,7 +43,10 @@ module.exports = exports =
 
     if parsed.log
       log.level = parsed.log
-      log.verbose "Set log level: #{parsed.log}"
+      log.verbose "enfield", "Set log level: %s", parsed.log
+    else if process.env.NODE_ENV is 'test'
+      log.level = 'silent'
+      log.verbose "enfield", "Supressing logs while running tests"
     else
       log.level = 'info'
 

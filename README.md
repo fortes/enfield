@@ -158,6 +158,7 @@ See `src/plugins/enfield-generators.coffee` for examples.
 
 ### HEAD
 
+- Add support for the `date_to_rfc822` filter present in Jekyll
 - Created tests and set up automated build testing with Travis: [https://travis-ci.org/fortes/enfield](https://travis-ci.org/fortes/enfield)
 - Use promises via the [Q](https://github.com/kriskowal/q) library instead of callbacks
 - Various bugfixes

@@ -12,6 +12,12 @@ module.exports =
         date.format()
       else
         str
+    date_to_rfc822: (str) ->
+      date = moment str
+      if date.isValid()
+        date.format('ddd, DD MMM YYYY HH:mm:ss ZZ')
+      else
+        str
     date_to_string: (str) ->
       date = moment str
       if date.isValid()
@@ -46,6 +52,9 @@ module.exports =
           "#{array.slice(0, len-1).join ', '}, #{connector} #{array[len - 1]}"
     # textilize
     # markdownify
+
+    jsonify: (obj) ->
+      JSON.stringify obj
   tags:
     highlight: (body, page, site) ->
       return """<pre><code lang="#{body}">"""
@@ -59,7 +68,7 @@ module.exports =
         match = body.match /^(\d{4})-(\d{2})-(\d{2})-(.+)$/
         if match
           [_, year, month, day, slug] = match
-          date = new Date(year, month - 1, day)
+          date = new Date(year, month - 1, day, 12, 0, 0, 0, 0)
           for post in site.posts
             if (slug is post.slug) and (post.date.getTime() is date.getTime())
               return post.url
