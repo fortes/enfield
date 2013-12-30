@@ -1,4 +1,6 @@
-assert = require "assert"
+assert   = require "assert"
+pygments = require "pygments"
+sinon    = require "sinon"
 
 {converters} = require "../../src/plugins/markdown"
 
@@ -22,10 +24,25 @@ describe "Markdown converter", ->
     md = """``` js
 var foo = "bar";
 ```"""
-    converters.markdown.convert md, (err, output) ->
-      assert !err, "No error thrown"
-      assert.equal output, '<pre><code class="lang-js">
+    pygmentsOutput = '<div class="highlight"><pre>
+<span class="kd">var</span> <span class="nx">foo</span> <span class="o">=</span>
+<span class="s2">&quot;bar&quot;</span><span class="p">;</span>\n
+</pre></div>\n'
+    expected = '<pre><code class="lang-js">
 <span class="kd">var</span> <span class="nx">foo</span> <span class="o">=</span>
  <span class="s2">&quot;bar&quot;</span><span class="p">;</span>\n
 </code></pre>\n'
+
+    sandbox = null
+    beforeEach ->
+      sandbox = sinon.sandbox.create()
+      sandbox.stub(pygments, "highlight")
+        .callsArgWithAsync(2, null, pygmentsOutput)
+
+    afterEach ->
+      sandbox?.restore()
+
+    converters.markdown.convert md, (err, output) ->
+      assert !err, "No error thrown"
+      assert.equal output, expected
       done()
