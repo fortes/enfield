@@ -77,7 +77,7 @@ describe "CoffeeScript compiler", ->
     resetSite()
     sandbox = sinon.sandbox.create()
     # Stub out CoffeeScript & file read
-    sandbox.stub(fs, "readFileSync").returns("cs")
+    sandbox.stub(fs, "readFile").callsArgWithAsync(1, null, "cs")
     sandbox.stub(coffee, "compile").returns("window.alert( 'Hi' )")
 
   afterEach ->
@@ -117,8 +117,8 @@ describe "LESS compiler", ->
       lessFiles = site.static_files.filter (file) -> /less/.test file
       assert.equal lessFiles.length, 0, ".less removed from static list"
 
-      cssPage = site.pages.filter (page) -> page.ext is ".css"
-      assert.equal cssPage.length, 1, "CSS page generated"
-      assert.equal cssPage[0].url, "css/style", "URL"
-      assert.equal cssPage[0].content, "css", "Content"
+      cssPages = site.pages.filter (page) -> page.ext is ".css"
+      assert.equal cssPages.length, 1, "CSS page generated"
+      assert.equal cssPages[0]?.url, "css/style", "URL"
+      assert.equal cssPages[0]?.content, "css", "Content"
       done()

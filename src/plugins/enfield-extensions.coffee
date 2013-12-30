@@ -64,48 +64,56 @@ module.exports =
 
     # Compile CoffeeScript files to minified JS
     coffeeScript: (site, callback) ->
+      # Collect files and remove original .coffee sources
+      coffeeFiles = []
       for filepath, i in site.static_files
-        if /\.coffee$/.test filepath
-          # Exclude from output
-          site.static_files[i] = null
+        continue unless path.extname(filepath) is '.coffee'
+        # Remove from output
+        site.static_files[i] = null
+        coffeeFiles.push filepath
 
-          try
-            # Compile and minify
-            # TODO: Move all these to async
-            fileContents = fs.readFileSync(filepath).toString()
-            compiled = coffee.compile fileContents
+      # Work in parallel
+      async.forEachLimit(
+        coffeeFiles
+        5
+        (filepath, cb) ->
+          fs.readFile filepath, (err, contents) ->
+            if err then return cb err
+            try
+              # Compile and minify
+              compiled = coffee.compile contents.toString()
 
-            # Uglify2 new API
-            ast = uglify.parse compiled
-            ast.figure_out_scope()
-            compressor = uglify.Compressor()
-            ast = ast.transform compressor
-            minified = ast.print_to_string()
+              # Uglify2 new API
+              ast = uglify.parse compiled
+              ast.figure_out_scope()
+              compressor = uglify.Compressor()
+              ast = ast.transform compressor
+              minified = ast.print_to_string()
 
-            # Output
-            outPath = filepath.replace /\.coffee$/, ''
-            site.pages.push {
-              published: true
-              url: outPath
-              content: minified
-              ext: '.js'
-            }
-          catch err
-            log.warn "CoffeeScript Compilation Error: #{err.message}".red
-            console.log err.message
-
-      # Do the callback async to avoid crazy stack traces
-      process.nextTick callback
+              # Output
+              outPath = filepath.replace /\.coffee$/, ''
+              site.pages.push {
+                published: true
+                url: outPath
+                content: minified
+                ext: '.js'
+              }
+            catch err
+              # Non-fatal
+              log.warn "CoffeeScript Compilation Error: #{err.message}".red
+            cb()
+        callback
+      )
 
     # Compile LESS files into minified CSS
     lessCSS: (site, callback) ->
       # Collect files and remove original .less source
       lessFiles = []
       for filepath, i in site.static_files
-        if path.extname(filepath) is '.less'
-          # Remove from output
-          site.static_files[i] = null
-          lessFiles.push filepath
+        continue unless path.extname(filepath) is '.less'
+        # Remove from output
+        site.static_files[i] = null
+        lessFiles.push filepath
 
       # Work in parallel
       async.forEachLimit(
@@ -121,22 +129,19 @@ module.exports =
               paths: [path.dirname filepath]
 
             # Render CSS
-            try
-              less.render contents.toString(), options, (err, css) ->
-                if err
-                  log.error "LESS Compilation Error: #{err.message}".red
-                  return cb()
+            less.render contents.toString(), options, (err, css) ->
+              if err
+                log.error "LESS Compilation Error: #{err.message}".red
+                return cb()
 
-                outPath = filepath.replace /\.less$/, ''
-                site.pages.push {
-                  published: true
-                  url: outPath
-                  content: css
-                  ext: '.css'
-                }
-                cb()
-            catch err
-              log.warn "LESS Compilation Error: #{err.message}".red
+              outPath = filepath.replace /\.less$/, ''
+              site.pages.push {
+                published: true
+                url: outPath
+                content: css
+                ext: '.css'
+              }
+
               cb()
         callback
       )
