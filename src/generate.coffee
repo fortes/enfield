@@ -425,7 +425,7 @@ loadContents = (config) ->
   helpers.getFileList(path.join(config.source, '**/*'))
     .then (files) ->
       # Segregate files into posts and non-posts (pages and static files)
-      { posts, others } = filterFiles config, files
+      { posts, others } = filterFiles config, files, postMask
 
       Q.all [
         loadPosts config, posts
@@ -557,7 +557,7 @@ loadPageOrFile = (config, file) ->
 
       { page: data, file }
 
-filterFiles = (config, files) ->
+filterFiles = (config, files, mask) ->
   posts = []
   others = []
   # Segregate files into posts and non-posts (pages and static files)
@@ -579,7 +579,7 @@ filterFiles = (config, files) ->
       others.push file
 
   # Filter any posts that don't match the filename pattern
-  posts = posts.filter (file) -> postMask.test path.basename file
+  posts = posts.filter (file) -> mask.test path.basename file
 
   { posts, others }
 
@@ -703,3 +703,7 @@ loadFileIntoPlugins = (file, plugins) ->
     for key, generator of plugin['generators']
       log.silly "generate", "Found generator for %s", key
       plugins.generators.push generator
+
+# Export internal functions when testing
+if process.env.NODE_ENV is 'test'
+  exports.filterFiles = filterFiles
