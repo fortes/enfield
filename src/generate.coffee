@@ -509,7 +509,7 @@ getPermalink = (slug, data, permalinkStyle) ->
     .replace(":day", helpers.twoDigitPad data.date.getDate())
     .replace(":title", slug)
     .replace(":categories", if data.categories then data.categories.join "/" else "")
-    .replace(":i_month", data.date.getMonth + 1)
+    .replace(":i_month", data.date.getMonth() + 1)
     .replace(":i_day", data.date.getDate())
     .replace("//", "/")
 
@@ -707,3 +707,4 @@ loadFileIntoPlugins = (file, plugins) ->
 # Export internal functions when testing
 if process.env.NODE_ENV is "test"
   exports.filterFiles = filterFiles
+  exports.getPermalink = getPermalink

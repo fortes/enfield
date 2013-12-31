@@ -2,6 +2,26 @@ assert = require "assert"
 
 generate = require "../src/generate"
 
+describe "getPermalink", ->
+  it "works as expected", ->
+    slug = "welcome"
+    post = {
+      date: new Date(2000, 0, 1, 12, 0, 0, 0, 0)
+      categories: ["cat1", "cat2"]
+    }
+
+    assert.equal generate.getPermalink(slug, post, "/:year/:title"),
+      "/2000/welcome"
+
+    assert.equal generate.getPermalink(slug, post, "/blog/:categories/:title"),
+      "/blog/cat1/cat2/welcome"
+
+    assert.equal generate.getPermalink(slug, post, "/:year/:month/:day/:title"),
+      "/2000/01/01/welcome"
+
+    assert.equal generate.getPermalink(slug, post, "/:year/:i_month/:i_day/:title"),
+      "/2000/1/1/welcome"
+
 describe "filterFiles", ->
   it "overwrites pre-existing filters and tags", ->
     config =
