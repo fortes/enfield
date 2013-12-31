@@ -1,11 +1,11 @@
 # Misc helpers
-async = require 'async'
-fs    = require 'fs-extra'
-glob  = require 'glob'
-log   = require 'npmlog'
-path  = require 'path'
-Q     = require 'q'
-yaml  = require 'js-yaml'
+async = require "async"
+fs    = require "fs-extra"
+glob  = require "glob"
+log   = require "npmlog"
+path  = require "path"
+Q     = require "q"
+yaml  = require "js-yaml"
 
 FRONT_MATTER_DELIMITER = /^---\s*$/
 
@@ -20,7 +20,7 @@ module.exports = exports =
             # Filter out directories
             files.filter (file, i) ->
               result = results[i]
-              result.state is 'fulfilled' and not result.value.isDirectory()
+              result.state is "fulfilled" and not result.value.isDirectory()
 
   # Call a function across all files matching a pattern, and return the result
   # in a map { filename: result }
@@ -56,14 +56,14 @@ module.exports = exports =
           if frontMatter.length
             data = yaml.load frontMatter.join "\n"
             # Yaml sometimes returns non-objects
-            if typeof data isnt 'object'
+            if typeof data isnt "object"
               data = { value: data }
             for name, value of data
-              # Convert nil to null, not sure why the library doesn't do this
-              if value is 'nil'
+              # Convert nil to null, not sure why the library doesn"t do this
+              if value is "nil"
                 data[name] = null
             # Remaining lines are the content
-            content = lines.join '\n'
+            content = lines.join "\n"
         else
           log.silly "helpers", "No frontmatter for %s", filepath
 
@@ -78,7 +78,7 @@ module.exports = exports =
   stripDirectoryPrefix: (name, base) ->
     if base and exports.isWithinDirectory name, base
       length = base.length + 1
-      if base[base.length - 1] is '/'
+      if base[base.length - 1] is "/"
         length = base.length
       name = name.substr length
     name

@@ -1,13 +1,13 @@
 # Command-line parser / interface
-fs          = require 'fs-extra'
-log         = require 'npmlog'
-node_static = require 'node-static'
-nopt        = require 'nopt'
-path        = require 'path'
-Q           = require 'q'
+fs          = require "fs-extra"
+log         = require "npmlog"
+node_static = require "node-static"
+nopt        = require "nopt"
+path        = require "path"
+Q           = require "q"
 
-conf = require './config'
-generate = require './generate'
+conf = require "./config"
+generate = require "./generate"
 
 # Copy Jekyll
 knownOptions =
@@ -29,13 +29,13 @@ knownOptions =
   log: String
 
 shortHands =
-  s: ['--source']
-  d: ['--destination']
-  w: ['--watch']
-  h: ['--help']
-  v: ['--version']
+  s: ["--source"]
+  d: ["--destination"]
+  w: ["--watch"]
+  h: ["--help"]
+  v: ["--version"]
 
-VERSION = '0.3.1'
+VERSION = "0.3.1"
 
 module.exports = exports =
   main: (argv) ->
@@ -44,18 +44,18 @@ module.exports = exports =
     if parsed.log
       log.level = parsed.log
       log.verbose "enfield", "Set log level: %s", parsed.log
-    else if process.env.NODE_ENV is 'test'
-      log.level = 'silent'
+    else if process.env.NODE_ENV is "test"
+      log.level = "silent"
       log.verbose "enfield", "Supressing logs while running tests"
     else
-      log.level = 'info'
+      log.level = "info"
 
     command = parsed.argv.remain[0]
     log.verbose "enfield", "Received command %s", command
     switch command
-      when 'new'
+      when "new"
         exports.new parsed.argv.remain[1]
-      when 'build', 'serve', 'server'
+      when "build", "serve", "server"
         # Clean options
         options = []
         for name, value of parsed
@@ -67,7 +67,7 @@ module.exports = exports =
             printConfiguration config
             log.silly "enfield", "Full configuration: %j", config
 
-            if command is 'build'
+            if command is "build"
               exports.build(config)
                 .fail (err) ->
                   log.error "enfield", "Generation error: #{err.message}"
@@ -77,17 +77,17 @@ module.exports = exports =
             else
               exports.serve(config)
                 .fail (err) ->
-                  log.error "enfield", "Could not start server: #{err.message}"
+                  log.error "enfield", "Couldn't start server: #{err.message}"
                   if err.stack
                     log.verbose "enfield", "Stack trace: %s", err.stack
                   process.exit -1
           .fail (err) ->
-            log.error "enfield", "Could not load configuration: #{err.message}"
+            log.error "enfield", "Couldn't load configuration: #{err.message}"
             process.exit -1
-      when 'version'
+      when "version"
         exports.version()
       else
-        if command is 'help' or not command
+        if command is "help" or not command
           exports.help()
         else
           log.error "enfield", "Invalid command. Use --help for more information"
@@ -110,11 +110,11 @@ module.exports = exports =
         fs.removeSync resolved
 
     # TODO: Copy site_template over
-    Q.nfcall(fs.copy, path.join(__dirname, '../site_template'), resolved)
+    Q.nfcall(fs.copy, path.join(__dirname, "../site_template"), resolved)
       .then ->
         log.info "enfield", "New site installed in #{resolved}"
       .fail (err) ->
-        log.error "enfield", "Could not create new site: #{err.message}"
+        log.error "enfield", "Couldn't create new site: #{err.message}"
         process.exit -1
 
   build: (config) ->
@@ -127,14 +127,14 @@ module.exports = exports =
     exports.build(config)
       .then ->
         fileServer = new(node_static.Server) config.destination
-        server = require('http').createServer (request, response) ->
+        server = require("http").createServer (request, response) ->
           log.http "server", "[#{timestamp()}] #{request.method} #{request.url}"
           fileServer.serve request, response
 
         log.info "enfield", "Running server at http://#{config.host}:#{config.port}"
         server.listen config.port, config.host
       .fail (err) ->
-        log.error "enfield", "Could not generate site: #{err.message}"
+        log.error "enfield", "Couldn't generate site: #{err.message}"
         if err.stack
           log.verbose "enfield", "Stack trace: %s", err.stack
         process.exit -1

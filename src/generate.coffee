@@ -1,15 +1,15 @@
-async      = require 'async'
-fs         = require 'fs-extra'
-gaze       = require 'gaze'
-glob       = require 'glob'
-log        = require 'npmlog'
-path       = require 'path'
-time       = require('time')(Date) # Extend global object
-tinyliquid = require 'tinyliquid'
-toposort   = require 'toposort'
-Q          = require 'q'
+async      = require "async"
+fs         = require "fs-extra"
+gaze       = require "gaze"
+glob       = require "glob"
+log        = require "npmlog"
+path       = require "path"
+time       = require("time")(Date) # Extend global object
+tinyliquid = require "tinyliquid"
+toposort   = require "toposort"
+Q          = require "q"
 
-helpers    = require './helpers'
+helpers    = require "./helpers"
 
 # Built-in plugins
 bundledPlugins = null
@@ -18,12 +18,12 @@ postMask = null
 # Global reference for custom tags
 currentState = null
 
-INCLUDE_PATH = '_includes'
+INCLUDE_PATH = "_includes"
 
 module.exports = exports = (config) ->
   log.info "generate", "Begin generation"
   # First-run initialization
-  postMask = ///^(\d{4})-(\d{2})-(\d{2})-(.+)\.(#{config.markdown_ext.join '|'}|html)$///
+  postMask = ///^(\d{4})-(\d{2})-(\d{2})-(.+)\.(#{config.markdown_ext.join "|"}|html)$///
   time.tzset config.timezone
   Q.all([checkDirectories(config), loadBundledPlugins()])
     .then ->
@@ -37,10 +37,10 @@ module.exports = exports = (config) ->
 
 watch = (config) ->
   destinationPath = path.resolve config.destination
-  Q.nfcall(gaze, path.join(config.source, '**/*'), {debounceDelay: 500})
+  Q.nfcall(gaze, path.join(config.source, "**/*"), {debounceDelay: 500})
     .then (watcher) ->
       log.info "watch", "Watching %s for changes", config.source
-      watcher.on 'all', (event, filepath) ->
+      watcher.on "all", (event, filepath) ->
         # Ignore any path within the destination directory
         return if helpers.isWithinDirectory filepath, destinationPath
 
@@ -386,7 +386,7 @@ getRawIncludes = (config) ->
     .then (stat) ->
       log.verbose "generate", "Loading includes from %s", includes
       deferred.resolve helpers.mapFiles(
-        path.join(includes, '**/*')
+        path.join(includes, "**/*")
         helpers.getMetadataAndContent
       )
     .fail (err) ->
@@ -404,7 +404,7 @@ getRawLayouts = (config) ->
       log.silly "generate", "Loading layouts from %s", config.layouts
       deferred.resolve(
         helpers.mapFiles(
-          path.join(config.layouts, '**/*')
+          path.join(config.layouts, "**/*")
           helpers.getMetadataAndContent
         )
       )
@@ -422,7 +422,7 @@ normalizeLayoutName = (name, layoutDir) ->
 
 loadContents = (config) ->
   log.verbose "generate", "Loading contents from %s", config.source
-  helpers.getFileList(path.join(config.source, '**/*'))
+  helpers.getFileList(path.join(config.source, "**/*"))
     .then (files) ->
       # Segregate files into posts and non-posts (pages and static files)
       { posts, others } = filterFiles config, files, postMask
@@ -437,7 +437,7 @@ loadContents = (config) ->
 
 loadPosts = (config, files) ->
   posts = []
-  log.verbose "generate", "Loading posts %s", files.join ', '
+  log.verbose "generate", "Loading posts %s", files.join ", "
   # TODO: Rate limit
   Q.all(files.map (file) ->
     loadPost(config, file).then (post) -> posts.push post
@@ -473,23 +473,23 @@ loadPost = (config, file) ->
       # Save original filepath
       data.path = file
       # Posts are published by default
-      unless 'published' of data
+      unless "published" of data
         data.published = true
       # Date comes from filename and gets parsed with at noon in timezone
       data.date = new Date match[1], match[2] - 1, match[3], 12, 0, 0, 0, 0
       slug = match[4]
       # Tags
-      if data.tags and typeof data.tags is 'string'
+      if data.tags and typeof data.tags is "string"
         data.tags = data.tags.split /\s+/
       # Alias category to categories
       if data.category and not data.categories
         data.categories = data.category
         delete data.category
       # Categories
-      if data.categories and typeof data.categories is 'string'
+      if data.categories and typeof data.categories is "string"
         data.categories = data.categories.split /\s+/
       # Add any categories from the directory
-      directoryCategories = path.dirname(file).split('/').filter (f) -> f isnt '_posts'
+      directoryCategories = path.dirname(file).split("/").filter (f) -> f isnt "_posts"
       if directoryCategories.length
         data.categories = (data.categories or []).concat directoryCategories
       # Calculate the permalink
@@ -504,14 +504,14 @@ loadPost = (config, file) ->
 
 getPermalink = (slug, data, permalinkStyle) ->
   return permalinkStyle
-    .replace(':year', data.date.getFullYear())
-    .replace(':month', helpers.twoDigitPad data.date.getMonth() + 1)
-    .replace(':day', helpers.twoDigitPad data.date.getDate())
-    .replace(':title', slug)
-    .replace(':categories', if data.categories then data.categories.join '/' else '')
-    .replace(':i_month', data.date.getMonth + 1)
-    .replace(':i_day', data.date.getDate())
-    .replace('//', '/')
+    .replace(":year", data.date.getFullYear())
+    .replace(":month", helpers.twoDigitPad data.date.getMonth() + 1)
+    .replace(":day", helpers.twoDigitPad data.date.getDate())
+    .replace(":title", slug)
+    .replace(":categories", if data.categories then data.categories.join "/" else "")
+    .replace(":i_month", data.date.getMonth + 1)
+    .replace(":i_day", data.date.getDate())
+    .replace("//", "/")
 
 # Generate a list of pages and static files
 loadOthers = (config, others) ->
@@ -540,7 +540,7 @@ loadPageOrFile = (config, file) ->
         return { file, page: null }
 
       # Pages are published by default
-      unless 'published' of data
+      unless "published" of data
         data.published = true
       # Save original filepath
       data.path = helpers.stripDirectoryPrefix file, config.source
@@ -563,14 +563,14 @@ filterFiles = (config, files, mask) ->
   # Segregate files into posts and non-posts (pages and static files)
   files.forEach (file) ->
     isPost = false
-    for dir in file.split '/'
+    for dir in file.split "/"
       # Save out posts
-      if dir is '_posts'
+      if dir is "_posts"
         isPost = true
         continue
       # Hidden file?
       else if (dir not in config.include) and
-              (dir[0] is '_' or dir[0] is '.' or dir in config.exclude)
+              (dir[0] is "_" or dir[0] is "." or dir in config.exclude)
         return
 
     if isPost
@@ -593,7 +593,7 @@ checkDirectories = (config) ->
 checkSourceDirectory = (dir) ->
   log.silly "generate", "Checking for source directory %s", dir
   deferred = Q.defer()
-  dir or= '.'
+  dir or= "."
   isDirectory(dir)
     .then (result) ->
       if result
@@ -634,7 +634,7 @@ isDirectory = (dir) ->
 
 # Built-in enfield plugins
 loadBundledPlugins = ->
-  loadPlugins([path.join __dirname, 'plugins'])
+  loadPlugins([path.join __dirname, "plugins"])
     .then (plugins) ->
       bundledPlugins = plugins
       # Copy default filters, but don't overwrite
@@ -649,12 +649,12 @@ loadSitePlugins = (config) ->
   # Only check directories that actually exist
   Q.allSettled(dirs.map (dir) -> Q.nfcall fs.stat, dir)
     .then (results) ->
-      pluginDirs = dirs.filter (dir, i) -> results[i].state is 'fulfilled'
+      pluginDirs = dirs.filter (dir, i) -> results[i].state is "fulfilled"
 
       loadPlugins pluginDirs
 
 loadPlugins = (dirs) ->
-  log.verbose "generate", "Looking for plugins in: %s", dirs.join ', '
+  log.verbose "generate", "Looking for plugins in: %s", dirs.join ", "
   Q.all(dirs.map (dir) -> Q.nfcall fs.readdir, dir)
     .then (dirListings) ->
       plugins =
@@ -673,7 +673,7 @@ loadPlugins = (dirs) ->
         # Remove non-code files
         .filter (f) ->
           ext = path.extname f
-          ext in ['.js','.coffee'] or fs.statSync(f).isDirectory()
+          ext in [".js",".coffee"] or fs.statSync(f).isDirectory()
 
       log.silly "generate", "Found plugins %j in %j",
         allFiles.map(path.basename), dirs
@@ -687,23 +687,23 @@ loadFileIntoPlugins = (file, plugins) ->
   log.verbose "generate", "Loading plugin: %s", file
   plugin = require file
 
-  if 'filters' of plugin
-    for key, filter of plugin['filters']
+  if "filters" of plugin
+    for key, filter of plugin["filters"]
       log.silly "generate", "Found filter for %s", key
       plugins.filters[key] = filter
-  if 'tags' of plugin
-    for key, tag of plugin['tags']
+  if "tags" of plugin
+    for key, tag of plugin["tags"]
       log.silly "generate", "Found tag for %s", key
       plugins.tags[key] = tag
-  if 'converters' of plugin
-    for key, converter of plugin['converters']
+  if "converters" of plugin
+    for key, converter of plugin["converters"]
       log.silly "generate", "Found converter for %s", key
       plugins.converters.push converter
-  if 'generators' of plugin
-    for key, generator of plugin['generators']
+  if "generators" of plugin
+    for key, generator of plugin["generators"]
       log.silly "generate", "Found generator for %s", key
       plugins.generators.push generator
 
 # Export internal functions when testing
-if process.env.NODE_ENV is 'test'
+if process.env.NODE_ENV is "test"
   exports.filterFiles = filterFiles

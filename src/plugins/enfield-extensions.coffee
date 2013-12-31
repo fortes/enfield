@@ -1,11 +1,11 @@
 # Built-in generators
-async  = require 'async'
-coffee = require 'coffee-script'
-fs     = require 'fs-extra'
-less   = require 'less'
-log    = require 'npmlog'
-path   = require 'path'
-uglify = require 'uglify-js'
+async  = require "async"
+coffee = require "coffee-script"
+fs     = require "fs-extra"
+less   = require "less"
+log    = require "npmlog"
+path   = require "path"
+uglify = require "uglify-js"
 
 createRedirectHTML = (page) ->
   {url} = page
@@ -34,7 +34,7 @@ module.exports =
             return page.url
 
       log.warn "page_url", "page_url #{body} could not be found"
-      return '#'
+      return "#"
 
   generators:
     # Generates url aliases
@@ -56,7 +56,7 @@ module.exports =
             published: page.published
             url: alias
             content: html
-            ext: '.html'
+            ext: ".html"
           }
 
       # Do the callback async to avoid crazy stack traces
@@ -67,7 +67,7 @@ module.exports =
       # Collect files and remove original .coffee sources
       coffeeFiles = []
       for filepath, i in site.static_files
-        continue unless path.extname(filepath) is '.coffee'
+        continue unless path.extname(filepath) is ".coffee"
         # Remove from output
         site.static_files[i] = null
         coffeeFiles.push filepath
@@ -91,12 +91,12 @@ module.exports =
               minified = ast.print_to_string()
 
               # Output
-              outPath = filepath.replace /\.coffee$/, ''
+              outPath = filepath.replace /\.coffee$/, ""
               site.pages.push {
                 published: true
                 url: outPath
                 content: minified
-                ext: '.js'
+                ext: ".js"
               }
             catch err
               # Non-fatal

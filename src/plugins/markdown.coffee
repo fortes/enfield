@@ -1,12 +1,12 @@
-pygments = require('pygments')
-marked   = require 'marked'
+pygments = require "pygments"
+marked   = require "marked"
 
 # Initialize markdown
 marked.setOptions
   gfm: true
   smartypants: true
   highlight: (code, lang, callback) ->
-    pygments.colorize code, lang, 'html', (data) ->
+    pygments.colorize code, lang, "html", (data) ->
       # Strip out the HTML wrapper added around the code
       data = data.replace(
         # Final \s is for newline
@@ -20,8 +20,8 @@ module.exports =
     markdown:
       priority: 2
       matches: (ext) ->
-        ext is '.md' or ext is '.markdown'
+        ext is ".md" or ext is ".markdown"
       outputExtension: (ext) ->
-        '.html'
+        ".html"
       convert: (content, callback) ->
         converted = marked content, {}, callback

@@ -1,8 +1,8 @@
 # Liquid extensions added by Jekyll
-he          = require 'he'
-log         = require 'npmlog'
-moment      = require 'moment'
-querystring = require 'querystring'
+he          = require "he"
+log         = require "npmlog"
+moment      = require "moment"
+querystring = require "querystring"
 
 module.exports =
   filters:
@@ -15,7 +15,7 @@ module.exports =
     date_to_rfc822: (str) ->
       date = moment str
       if date.isValid()
-        date.format('ddd, DD MMM YYYY HH:mm:ss ZZ')
+        date.format("ddd, DD MMM YYYY HH:mm:ss ZZ")
       else
         str
     date_to_string: (str) ->
@@ -37,19 +37,19 @@ module.exports =
     uri_escape: (str) ->
       encodeURIComponent str
     number_of_words: (str) ->
-      str?.split(' ').length
+      str?.split(" ").length
     array_to_sentence_string: (array, connector="and") ->
-      return '' unless array
+      return "" unless array
       len = array.length
       switch len
         when 0
-          ''
+          ""
         when 1
           array[0]
         when 2
           "#{array[0]} #{connector} #{array[1]}"
         else
-          "#{array.slice(0, len-1).join ', '}, #{connector} #{array[len - 1]}"
+          "#{array.slice(0, len-1).join ", "}, #{connector} #{array[len - 1]}"
     # textilize
     # markdownify
 
@@ -74,12 +74,12 @@ module.exports =
               return post.url
 
       log.warn "post_url", "post_url #{body} could not be found"
-      return '#'
+      return "#"
 
   generators:
     "pagination": (site, callback) ->
-      # Ignore if pagination isn't enabled or there are no posts
-      unless site.config['paginate'] and site.posts.length
+      # Ignore if pagination isn"t enabled or there are no posts
+      unless site.config["paginate"] and site.posts.length
         return callback()
 
       # As in Jekyll, pagination only works in index.html files
@@ -89,7 +89,7 @@ module.exports =
           continue
 
         page_number = 1
-        per_page = site.config['paginate']
+        per_page = site.config["paginate"]
         posts = site.posts.slice 0, per_page
         if site.posts.length
           total_posts = site.posts.length

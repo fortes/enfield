@@ -1,9 +1,9 @@
-fs   = require 'fs'
-log  = require 'npmlog'
-path = require 'path'
-time = require 'time'
-Q    = require 'q'
-yaml = require 'js-yaml'
+fs   = require "fs"
+log  = require "npmlog"
+path = require "path"
+time = require "time"
+Q    = require "q"
+yaml = require "js-yaml"
 
 module.exports = exports =
   get: (options) ->
@@ -48,13 +48,13 @@ module.exports = exports =
 
   # Use same defaults as Jekyll, per: http://jekyllrb.com/docs/configuration/
   DEFAULTS:
-    source: './'
-    destination: './_site'
-    plugins: '_plugins'
-    layouts: '_layouts'
-    include: ['.htaccess']
+    source: "./"
+    destination: "./_site"
+    plugins: "_plugins"
+    layouts: "_layouts"
+    include: [".htaccess"]
     exclude: []
-    keep_files: ['.git', '.svn']
+    keep_files: [".git", ".svn"]
     timezone: null
 
     future: true
@@ -64,25 +64,25 @@ module.exports = exports =
 
     relative_permalinks: true
 
-    permalink: 'date'
-    paginate_path: 'page:num'
+    permalink: "date"
+    paginate_path: "page:num"
 
-    #markdown: 'maruku'
-    markdown_ext: ['markdown', 'mkd', 'mkdn', 'md']
-    #textile_ext: ['textile']
+    #markdown: "maruku"
+    markdown_ext: ["markdown", "mkd", "mkdn", "md"]
+    #textile_ext: ["textile"]
 
-    excerpt_separator: '\n\n'
+    excerpt_separator: "\n\n"
 
     safe: false
-    host: '0.0.0.0'
+    host: "0.0.0.0"
     port: 4000
-    baseurl: '/'
-    url: 'http://localhost:4000'
+    baseurl: "/"
+    url: "http://localhost:4000"
     #lsi: false
 
     # Enfield-specific
     pretty_urls: false
-    config: '_config.yml'
+    config: "_config.yml"
 
 # Override options from one object to another
 mergeConfig = (config, override) ->
@@ -92,15 +92,15 @@ mergeConfig = (config, override) ->
 # Resolve shortcut values
 resolveOptions = (config) ->
   # Convert permalink style shortcuts to full style
-  if config.permalink is 'date' or not config.permalink
-    config.permalink = '/:categories/:year/:month/:day/:title.html'
-  else if config.permalink is 'pretty'
-    config.permalink = '/:categories/:year/:month/:day/:title/'
-  else if config.permalink is 'none'
-    config.permalink = '/:categories/:title.html'
+  if config.permalink is "date" or not config.permalink
+    config.permalink = "/:categories/:year/:month/:day/:title.html"
+  else if config.permalink is "pretty"
+    config.permalink = "/:categories/:year/:month/:day/:title/"
+  else if config.permalink is "none"
+    config.permalink = "/:categories/:title.html"
 
   # Make sure plugins is an array
-  if typeof config.plugins is 'string'
+  if typeof config.plugins is "string"
     config.plugins = [config.plugins]
 
   unless config.timezone
@@ -117,11 +117,11 @@ resolveOptions = (config) ->
   config.plugins = config.plugins.map (d) -> path.resolve config.source, d
 
   # Nicer formatting for current directory as source
-  config.source or= './'
+  config.source or= "./"
 
   config
 
 # Export internal functions when testing
-if process.env.NODE_ENV is 'test'
+if process.env.NODE_ENV is "test"
   exports.mergeConfig = mergeConfig
   exports.resolveOptions = resolveOptions
