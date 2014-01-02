@@ -212,9 +212,11 @@ See `src/plugins/enfield-generators.coffee` for examples.
 * Post index page for year directories
 * Check for permalink collisions due to same slug and different dates
 
-## Build Status
+## Status
 
 [![Build Status](https://travis-ci.org/fortes/enfield.png?branch=master)](https://travis-ci.org/fortes/enfield)
+
+[![Dependency Status](https://david-dm.org/fortes/enfield.png)](https://david-dm.org/fortes/enfield)
 
 ## License
 
