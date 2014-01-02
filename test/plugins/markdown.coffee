@@ -33,7 +33,7 @@ describe "Markdown converter", ->
 </pre></div>\n'
     expected = '<pre><code class="lang-js">
 <span class="kd">var</span> <span class="nx">foo</span> <span class="o">=</span>
- <span class="s2">&quot;bar&quot;</span><span class="p">;</span>\n
+ <span class="s2">&quot;bar&quot;</span><span class="p">;</span>\n\n
 </code></pre>\n'
 
     sandbox.stub(pygments, "colorize")
