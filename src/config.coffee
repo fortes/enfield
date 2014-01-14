@@ -7,6 +7,7 @@ yaml = require "js-yaml"
 
 module.exports = exports =
   get: (options) ->
+    log.silly "config", "config.get(%j)", options
     deferred = Q.defer()
 
     # Start with defaults
@@ -33,8 +34,9 @@ module.exports = exports =
         config = mergeConfig config, options
 
         deferred.resolve resolveOptions config
-      .fail ->
+      .fail (err) ->
         log.verbose "config", "Can't read %s. Using defaults", config.config
+        log.silly "config", "File error: %s", err.message
 
         # Mark config file as not found
         config.config = null
@@ -91,6 +93,8 @@ mergeConfig = (config, override) ->
 
 # Resolve shortcut values
 resolveOptions = (config) ->
+  log.silly "config", "resolveOptions(%j)", config
+
   # Convert permalink style shortcuts to full style
   if config.permalink is "date" or not config.permalink
     config.permalink = "/:categories/:year/:month/:day/:title.html"
@@ -119,6 +123,7 @@ resolveOptions = (config) ->
   # Nicer formatting for current directory as source
   config.source or= "./"
 
+  log.silly "config", "Resolved config %j", config
   config
 
 # Export internal functions when testing

@@ -44,11 +44,16 @@ module.exports = exports =
     if parsed.log
       log.level = parsed.log
       log.verbose "enfield", "Set log level: %s", parsed.log
+      if log.level in ["verbose", "silly"]
+        Q.longStackSupport = true
     else if process.env.NODE_ENV is "test"
       log.level = "silent"
       log.verbose "enfield", "Supressing logs while running tests"
+      Q.longStackSupport = true
     else
       log.level = "info"
+
+    log.silly "enfield", "Parsed options: %j", parsed
 
     command = parsed.argv.remain[0]
     log.verbose "enfield", "Received command %s", command
@@ -83,6 +88,8 @@ module.exports = exports =
                   process.exit -1
           .fail (err) ->
             log.error "enfield", "Couldn't load configuration: #{err.message}"
+            if err.stack
+              log.verbose "enfield", "Stack trace: %s", err.stack
             process.exit -1
       when "version"
         exports.version()
@@ -91,6 +98,8 @@ module.exports = exports =
           exports.help()
         else
           log.error "enfield", "Invalid command. Use --help for more information"
+          if err.stack
+            log.verbose "enfield", "Stack trace: %s", err.stack
           process.exit -1
 
   new: (dir) ->
@@ -121,6 +130,11 @@ module.exports = exports =
     generate(config)
       .then ->
         log.info "enfield", "Generation done"
+      .fail (err) ->
+        log.error "enfield", "Build failed: %s", err.message
+        if err.stack
+          log.verbose "enfield", "Stack trace: %s", err.stack
+        process.exit -1
 
   serve: (config) ->
     # Watching happens within the build command

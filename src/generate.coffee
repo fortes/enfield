@@ -269,6 +269,7 @@ convertContent = (ext, content, converters) ->
   deferred.promise
 
 mergePlugins = (a, b) ->
+  log.silly "generate", "mergePlugins(%j, %j)", a, b
   merged =
     filters: {}
     tags: {}
@@ -584,6 +585,7 @@ filterFiles = (config, files, mask) ->
   { posts, others }
 
 checkDirectories = (config) ->
+  log.silly "generate", "checkingDirectories(%j)", config
   Q.all [
     checkSourceDirectory config.source
     checkDestinationDirectory config.destination
