@@ -708,3 +708,4 @@ loadFileIntoPlugins = (file, plugins) ->
 if process.env.NODE_ENV is "test"
   exports.filterFiles = filterFiles
   exports.getPermalink = getPermalink
+  exports.convertContent = convertContent

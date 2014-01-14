@@ -56,3 +56,28 @@ describe "filterFiles", ->
     assert "projects/intro.md" in others, "pages in subdirectories included"
     assert "music/2011-01-01-music-post.md" in others,
       "pages that matches post mask but outside of _posts"
+
+describe "convertContent", ->
+  converters = [
+    {
+      matches: (ext) -> ext is ".md"
+      outputExtension: (ext) -> ".html"
+      convert: (content, callback) -> callback null, "Converted"
+    }
+  ]
+
+  it "calls properly calls converters", (done) ->
+    generate.convertContent(".md", "myContent", converters)
+      .nodeify (err, converted) ->
+        assert !err, "No error thrown"
+        assert.equal converted.ext, ".html", "Extension modified"
+        assert.equal converted.content, "Converted", "Content converted"
+        done()
+
+  it "leaves content alone if no converter is found", (done) ->
+    generate.convertContent(".bogus", "myContent", converters)
+      .nodeify (err, converted) ->
+        assert !err, "No error thrown"
+        assert.equal converted.ext, ".bogus", "Extension unmodified"
+        assert.equal converted.content, "myContent", "Content unmodified"
+        done()
