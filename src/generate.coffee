@@ -7,6 +7,7 @@ path       = require "path"
 time       = require("time")(Date) # Extend global object
 tinyliquid = require "tinyliquid"
 toposort   = require "toposort"
+util       = require "util"
 Q          = require "q"
 
 helpers    = require "./helpers"
@@ -168,7 +169,7 @@ writePages = (pages, bundle) ->
   Q.all pages.map (page) -> writePage page, bundle
 
 writePage = (page, bundle) ->
-  log.verbose "generate", "writePage %s", page.url
+  log.silly "generate", "writePage(%s)", util.inspect page
   { site, config, liquidOptions, compiledLayouts, mergedPlugins, context } = bundle
 
   currentState.page = page
@@ -226,7 +227,7 @@ writePage = (page, bundle) ->
         Q.nfcall template, context
       .then ->
         # Write file
-        log.verbose "generate", "Writing file: %s", outpath
+        log.verbose "generate", "Writing page: %s", outpath
         Q.nfcall fs.outputFile, outpath, context.clearBuffer()
 
           # TODO: Re-enable the error checking that happens on tinyliquid
@@ -463,7 +464,7 @@ loadPosts = (config, files) ->
       posts
 
 loadPost = (config, file) ->
-  log.silly "generate", "Loading post: %s", file
+  log.silly "generate", "loadPost(%s)", file
   helpers.getMetadataAndContent(file)
     .then (val) ->
       { data, content } = val
@@ -501,6 +502,7 @@ loadPost = (config, file) ->
       data.content = content
 
       log.verbose "generate", "Loaded post: %s", file
+      log.silly "generate", "loadPost(%s) -> %j", file, data
       data
 
 getPermalink = (slug, data, permalinkStyle) ->
