@@ -2,6 +2,27 @@ assert = require "assert"
 
 generate = require "../src/generate"
 
+describe "getCategoriesFromPostPath", ->
+  config = { source: "" }
+
+  it "supports category directories within _posts", ->
+    config.source = "./"
+    file = "_posts/cat1/cat2/2014-01-14-my-post.md"
+    cats = generate.getCategoriesFromPostPath file, config
+    assert.deepEqual cats, ["cat1", "cat2"]
+
+  it "supports _posts within category directories", ->
+    config.source = "./"
+    file = "cat1/cat2/_posts/2014-01-14-my-post.md"
+    cats = generate.getCategoriesFromPostPath file, config
+    assert.deepEqual cats, ["cat1", "cat2"]
+
+  it "ignores directories from root path", ->
+    config.source = "/var/source"
+    file = "/var/source/cat/_posts/2014-01-14-my-post.md"
+    cats = generate.getCategoriesFromPostPath file, config
+    assert.deepEqual cats, ["cat"]
+
 describe "getPermalink", ->
   it "works as expected", ->
     slug = "welcome"

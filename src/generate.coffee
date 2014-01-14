@@ -491,7 +491,7 @@ loadPost = (config, file) ->
       if data.categories and typeof data.categories is "string"
         data.categories = data.categories.split /\s+/
       # Add any categories from the directory
-      directoryCategories = path.dirname(file).split("/").filter (f) -> f isnt "_posts"
+      directoryCategories = getCategoriesFromPostPath file, config
       if directoryCategories.length
         data.categories = (data.categories or []).concat directoryCategories
       # Calculate the permalink
@@ -504,6 +504,11 @@ loadPost = (config, file) ->
       log.verbose "generate", "Loaded post: %s", file
       log.silly "generate", "loadPost(%s) -> %j", file, data
       data
+
+getCategoriesFromPostPath = (file, config) ->
+  # Remove path source root
+  path.dirname(path.relative config.source, file)
+    .split("/").filter (f) -> f and f isnt "_posts"
 
 getPermalink = (slug, data, permalinkStyle) ->
   return permalinkStyle
@@ -707,3 +712,4 @@ if process.env.NODE_ENV is "test"
   exports.filterFiles = filterFiles
   exports.getPermalink = getPermalink
   exports.convertContent = convertContent
+  exports.getCategoriesFromPostPath = getCategoriesFromPostPath
