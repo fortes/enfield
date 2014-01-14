@@ -182,62 +182,76 @@ writePage = (page, bundle) ->
     # Run conversion
     convertContent(ext, page.content, mergedPlugins.converters)
       .then (result) ->
-        log.verbose "generate", "Processing %s (%s)", page.title, page.url
-
-        page.content = result.content
-        newExt = result.ext or page.ext
-        paginator = page.paginator or {}
-
-        # Pretty URLs don't get extensions
-        if config.pretty_urls and newExt is '.html'
-          page.url = helpers.stripExtension page.url
-        else if newExt isnt ext
-          # Update page url with new extension
-          page.url = (helpers.stripExtension page.url) + newExt
-
-        # Strip out index.html
-        if path.basename(page.url, '.html') is 'index'
-          page.url = path.dirname page.url
-
-        # Set up correct path / URL
-        outpath = path.join config.destination, page.url
-        unless path.extname page.url
-          if newExt is '.html'
-            outpath = path.join config.destination, page.url, 'index.html'
-
-        context.setLocals 'page', page
-        context.setLocals 'paginator', paginator
-
-        # Content may contain liquid directives (such as a post listing). Process
-        # now before layout
-        render = tinyliquid.compile page.content, liquidOptions
-        Q.nfcall render, context
-      .then ->
-        log.silly "generate", "Rendered page content for %s", page.url
+        processConvertedPage(result, page, config)
+      .then (outputPath) ->
+        outpath = outputPath
+        # Content may contain liquid directives (such as a post listing)
+        # Process now before layout
+        renderLiquidPostContent(page, context, liquidOptions)
+      .then (content) ->
+        log.silly "generate", "Rendered page content for %s: %s", page.url, content
         page.content = context.clearBuffer().toString()
-
-        # If there's no layout, then we're done
-        unless page.layout and page.layout of compiledLayouts
-          log.verbose "generate", "Writing file without layout: %s", outpath
-          return Q.nfcall fs.outputFile, outpath, page.content
-
-        log.verbose "generate", "Applying layout %s to %s", page.layout, page.url
-        template = compiledLayouts[page.layout]
-        context.setLocals 'content', page.content
-        Q.nfcall template, context
-      .then ->
+        renderPostLayout(page, compiledLayouts, context)
+      .then (contents) ->
         # Write file
         log.verbose "generate", "Writing page: %s", outpath
-        Q.nfcall fs.outputFile, outpath, context.clearBuffer()
+        Q.nfcall(fs.outputFile, outpath, contents)
 
-          # TODO: Re-enable the error checking that happens on tinyliquid
-          # compilation
-          #.fail (err) ->
-            #log.verbose "generate", "Tinyliquid compile error: %s", err.message
-            #throw new Error "Error while processing #{page.url}: #{err.message}"
-          #.fail (err) ->
-            #log.verbose "generate", "Tinyliquid compile error: %s", err.message
-            #throw new Error "Error while processing #{page.url}: #{err.message}"
+processConvertedPage = (result, page, config) ->
+  log.verbose "generate", "Processing %s (%s)", page.title, page.url
+
+  ext = path.extname page.path
+  page.content = result.content
+  newExt = result.ext
+
+  # Pretty URLs don't get extensions
+  if config.pretty_urls and newExt is '.html'
+    page.url = helpers.stripExtension page.url
+  else if newExt isnt ext
+    # Update page url with new extension
+    page.url = (helpers.stripExtension page.url) + newExt
+
+  # Strip out index.html
+  if path.basename(page.url, '.html') is 'index'
+    page.url = path.dirname page.url
+
+  # Set up correct path / URL
+  outpath = path.join config.destination, page.url
+  unless path.extname page.url
+    if newExt is '.html'
+      outpath = path.join config.destination, page.url, 'index.html'
+
+  outpath
+
+renderLiquidPostContent = (page, context, liquidOptions) ->
+  context.setLocals 'page', page
+  context.setLocals 'paginator', page.paginator or {}
+
+  render = tinyliquid.compile page.content, liquidOptions
+  Q.nfcall(render, context)
+    .then(
+      -> return context.clearBuffer().toString()
+      (err) ->
+        log.warn "generate", "Tinyliquid compile error: %s", err.message
+        throw new Error "Liquid error from #{page.url}: #{err.message}"
+    )
+
+renderPostLayout = (page, compiledLayouts, context) ->
+  # If there's no layout, then we just return the content
+  unless page.layout and page.layout of compiledLayouts
+    log.verbose "generate", "No layout for: %s", page.path
+    return page.content
+
+  log.verbose "generate", "Applying layout %s to %s", page.layout, page.url
+  template = compiledLayouts[page.layout]
+  context.setLocals 'content', page.content
+  Q.nfcall(template, context)
+    .then(
+      -> context.clearBuffer()
+      (err) ->
+        log.warn "generate", "Tinyliquid template error: %s", err.message
+        throw new Error "Liquid error from #{page.url}: #{err.message}"
+    )
 
 writeFiles = (bundle) ->
   log.verbose "generate", "Writing static files: %j", bundle.site.static_files
