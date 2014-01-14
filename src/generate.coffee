@@ -594,7 +594,7 @@ checkSourceDirectory = (dir) ->
   log.silly "generate", "Checking for source directory %s", dir
   deferred = Q.defer()
   dir or= "."
-  isDirectory(dir)
+  helpers.isDirectory(dir)
     .then (result) ->
       if result
         log.silly "generate", "Source directory present %s", dir
@@ -610,7 +610,7 @@ checkSourceDirectory = (dir) ->
 checkDestinationDirectory = (dir) ->
   log.silly "generate", "Checking for destination directory %s", dir
   deferred = Q.defer()
-  isDirectory(dir)
+  helpers.isDirectory(dir)
     .then (result) ->
       if result
         log.silly "generate", "Destination directory present %s", dir
@@ -625,12 +625,6 @@ checkDestinationDirectory = (dir) ->
       deferred.resolve Q.nfcall fs.mkdirs, dir
 
   deferred.promise
-
-# True if file is directory
-# False if file exists but isn't directory
-# Fails if file does not exist
-isDirectory = (dir) ->
-  Q.nfcall(fs.stat, dir).then (stat) -> stat.isDirectory()
 
 # Built-in enfield plugins
 loadBundledPlugins = ->

@@ -83,6 +83,12 @@ module.exports = exports =
       name = name.substr length
     name
 
+  # True if file is directory
+  # False if file exists but isn't directory
+  # Fails if file does not exist
+  isDirectory: (dir) ->
+    Q.nfcall(fs.stat, dir).then (stat) -> stat.isDirectory()
+
   isWithinDirectory: (name, base) ->
     name.substr(0, base.length) is base
 
