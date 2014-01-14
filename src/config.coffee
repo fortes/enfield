@@ -113,7 +113,9 @@ resolveOptions = (config) ->
 
   # Make source, config, and destination paths relative to current directory
   config.source = path.relative process.cwd(), config.source
-  config.config = path.relative process.cwd(), config.config
+  # Config path null if no file
+  if config.config
+    config.config = path.relative process.cwd(), config.config
   config.destination = path.relative process.cwd(), config.destination
 
   # Make sure plugins and layout directories are relative to source
