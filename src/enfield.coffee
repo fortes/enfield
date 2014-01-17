@@ -35,7 +35,7 @@ shortHands =
   h: ["--help"]
   v: ["--version"]
 
-VERSION = "0.3.1"
+VERSION = "0.4"
 
 module.exports = exports =
   main: (argv) ->
