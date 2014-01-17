@@ -91,10 +91,10 @@ module.exports = exports =
             if err.stack
               log.verbose "enfield", "Stack trace: %s", err.stack
             process.exit -1
-      when "version"
-        exports.version()
       else
-        if command is "help" or not command
+        if parsed.version
+          exports.version()
+        else if command is "help" or parsed.help or not command
           exports.help()
         else
           log.error "enfield", "Invalid command. Use --help for more information"
