@@ -1,6 +1,6 @@
 # Liquid extensions added by Jekyll
 he          = require "he"
-log         = require "npmlog"
+log         = require "../log"
 moment      = require "moment"
 querystring = require "querystring"
 

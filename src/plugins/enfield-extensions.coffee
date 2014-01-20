@@ -3,7 +3,7 @@ async  = require "async"
 coffee = require "coffee-script"
 fs     = require "fs-extra"
 less   = require "less"
-log    = require "npmlog"
+log    = require "../log"
 path   = require "path"
 uglify = require "uglify-js"
 

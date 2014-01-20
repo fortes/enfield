@@ -2,7 +2,7 @@ assert = require "assert"
 coffee = require "coffee-script"
 fs     = require "fs-extra"
 less   = require "less"
-log    = require "npmlog"
+log    = require "../../src/log"
 sinon  = require "sinon"
 uglify = require "uglify-js"
 
@@ -12,7 +12,7 @@ uglify = require "uglify-js"
 site = null
 
 # Silence logs
-log.level = "silent"
+log.setLevel "silent"
 
 resetSite = ->
   site =

@@ -1,6 +1,6 @@
 # Command-line parser / interface
 fs          = require "fs-extra"
-log         = require "npmlog"
+log         = require "./log"
 node_static = require "node-static"
 nopt        = require "nopt"
 path        = require "path"
@@ -42,16 +42,17 @@ module.exports = exports =
     parsed = nopt knownOptions, shortHands, argv, 2
 
     if parsed.log
-      log.level = parsed.log
+      log.setLevel parsed.log
       log.verbose "enfield", "Set log level: %s", parsed.log
-      if log.level in ["verbose", "silly"]
+      if parsed.log in ["verbose", "silly"]
+        log.showTimestamp true
         Q.longStackSupport = true
     else if process.env.NODE_ENV is "test"
-      log.level = "silent"
+      log.setLevel "silent"
       log.verbose "enfield", "Supressing logs while running tests"
       Q.longStackSupport = true
     else
-      log.level = "info"
+      log.setLevel "info"
 
     log.silly "enfield", "Parsed options: %j", parsed
 
@@ -142,7 +143,7 @@ module.exports = exports =
       .then ->
         fileServer = new(node_static.Server) config.destination
         server = require("http").createServer (request, response) ->
-          log.http "server", "[#{timestamp()}] #{request.method} #{request.url}"
+          log.http "server", "#{request.method} #{request.url}"
           fileServer.serve request, response
 
         log.info "enfield", "Running server at http://#{config.host}:#{config.port}"
@@ -197,5 +198,3 @@ printConfiguration = (config) ->
     log.warn "enfield", "No configuration file"
   log.info "enfield", "Source: %s", config.source
   log.info "enfield", "Destination: %s", config.destination
-
-timestamp = -> (new Date).toLocaleTimeString()

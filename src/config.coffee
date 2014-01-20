@@ -1,5 +1,5 @@
 fs   = require "fs"
-log  = require "npmlog"
+log  = require "./log"
 path = require "path"
 time = require "time"
 Q    = require "q"
