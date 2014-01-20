@@ -145,26 +145,30 @@ processResults = ({config, plugins, includes, layouts, posts, pages, files}) ->
 
       bundle.compiledLayouts = compiledLayouts
 
-      log.verbose "generate", "Reading complete. Preparing to write"
+      log.verbose "generate", "Reading complete. Running generators"
 
       # Run generators across site
       Q.all(
         mergedPlugins.generators.map (generator) -> Q.nfcall generator, site
       )
     .then ->
+      log.verbose "generate", "Generators complete, preparing to write posts"
       # Filter out any files blanked by generators
       site.static_files = site.static_files.filter (f) -> !!f
 
       # Now write all content to disk
       writePages site.posts, bundle
     .then ->
+      log.verbose "generate", "Posts written, writing pages"
       writePages site.pages, bundle
     .then ->
+      log.verbose "generate", "Pages written, copying files"
       writeFiles bundle
     .fail (err) ->
       console.error err.message
 
 writePages = (pages, bundle) ->
+  log.verbose "generate", "writePages: %s pages to write", pages.length
   # TODO: Limit concurrency here
   Q.all pages.map (page) -> writePage page, bundle
 
@@ -440,8 +444,11 @@ loadContents = (config) ->
   log.verbose "generate", "Loading contents from %s", config.source
   helpers.getFileList(path.join(config.source, "**/*"))
     .then (files) ->
+      console.dir files
       # Segregate files into posts and non-posts (pages and static files)
       { posts, others } = filterFiles config, files, postMask
+      console.dir posts
+      console.dir others
 
       Q.all [
         loadPosts config, posts
@@ -586,6 +593,8 @@ filterFiles = (config, files, mask) ->
   files.forEach (file) ->
     isPost = false
     for dir in file.split "/"
+      continue if dir in ['.', '..']
+
       # Save out posts
       if dir is "_posts"
         isPost = true

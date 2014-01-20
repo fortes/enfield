@@ -58,6 +58,8 @@ describe "filterFiles", ->
       "_posts/stray.html"              # Non-post in post directory
       "about.md"
       "projects/intro.md"
+      "./about.md"                     # Included even though begins with "."
+      "../about.md"                    # Included even though begins with "."
       "music/2011-01-01-music-post.md" # Page since not in _posts
     ]
     mask = /^(\d{4})-(\d{2})-(\d{2})-(.+)\.(md|html)$/
