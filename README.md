@@ -69,7 +69,9 @@ Global Options:
 
 ## Plugins
 
-Enfield will load any `.coffee` or `.js` file from the `_plugins` directory. The plugin system is modeled after [Jekyll Plugins](https://github.com/mojombo/jekyll/wiki/Plugins). The following plugin types are supported:
+Enfield will load any `.coffee` or `.js` file from the `_plugins` directory.
+The plugin system is modeled after [Jekyll Plugins](http://jekyllrb.com/docs/plugins/).
+The following plugin types are supported:
 
 * Converters
 * Liquid Filters
@@ -78,7 +80,8 @@ Enfield will load any `.coffee` or `.js` file from the `_plugins` directory. The
 
 ### Converters
 
-Custom converters can be added. Note that only items with YAML frontmatter will be converted. All others are ignored.
+Custom converters can be added. Note that only items with YAML frontmatter will be converted.
+All others are ignored.
 
 ```js
 module.exports = {
