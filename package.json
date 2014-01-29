@@ -22,7 +22,7 @@
     "jekyll"
   ],
   "bin": {
-    "enfield": "./bin/enfield.coffee"
+    "enfield": "./bin/enfield.js"
   },
   "preferGlobal": true,
   "scripts": {
@@ -31,7 +31,7 @@
   },
   "dependencies": {
     "async": "~0.2",
-    "coffee-script": "~1.6",
+    "coffee-script": "~1.7",
     "colors": "~0.6",
     "fs-extra": "~0.8",
     "gaze": "~0.4",
