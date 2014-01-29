@@ -21,6 +21,13 @@
     "generator",
     "jekyll"
   ],
+  "files": [
+    "CHANGELOG.md",
+    "LICENSE",
+    "bin",
+    "site_template",
+    "src"
+  ],
   "bin": {
     "enfield": "./bin/enfield.js"
   },
