@@ -165,7 +165,7 @@ processResults = ({config, plugins, includes, layouts, posts, pages, files}) ->
       log.verbose "generate", "Pages written, copying files"
       writeFiles bundle
     .fail (err) ->
-      console.error err.message
+      log.error "generate", err.message
 
 writePages = (pages, bundle) ->
   log.verbose "generate", "writePages: %s pages to write", pages.length
@@ -444,11 +444,8 @@ loadContents = (config) ->
   log.verbose "generate", "Loading contents from %s", config.source
   helpers.getFileList(path.join(config.source, "**/*"))
     .then (files) ->
-      console.dir files
       # Segregate files into posts and non-posts (pages and static files)
       { posts, others } = filterFiles config, files, postMask
-      console.dir posts
-      console.dir others
 
       Q.all [
         loadPosts config, posts
