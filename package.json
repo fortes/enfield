@@ -1,8 +1,34 @@
 {
   "name": "enfield",
+  "version": "0.3.1",
   "description": "Jekyll-like blog engine for node.js",
   "author": "Filipe Fortes <filipe@fortes.com>",
-  "version": "0.3.1",
+  "contributors": [
+    "Filipe Fortes"
+  ],
+  "homepage": "https://github.com/fortes/enfield",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fortes/enfield.git"
+  },
+  "bugs": {
+    "url": "https://github.com/fortes/enfield/issues"
+  },
+  "keywords": [
+    "blog",
+    "static",
+    "generator",
+    "jekyll"
+  ],
+  "bin": {
+    "enfield": "./bin/enfield.coffee"
+  },
+  "preferGlobal": true,
+  "scripts": {
+    "test": "NODE_ENV=test mocha --recursive --reporter tap --compilers coffee:coffee-script",
+    "test-watch": "NODE_ENV=test mocha --recursive --watch --reporter dot --compilers coffee:coffee-script"
+  },
   "dependencies": {
     "async": "~0.2",
     "coffee-script": "~1.6",
@@ -19,45 +45,21 @@
     "nopt": "~2.1",
     "npmlog": "~0.0",
     "pygments": "~0.2",
+    "q": "~0.9",
     "time": "~0.10",
     "tinyliquid": "~0.2",
     "toposort": "~0.2",
     "uglify-js": "~2.4",
-    "uslug": "~1.0",
-    "q": "~0.9"
-  },
-  "engines": {
-    "node": ">=0.8"
-  },
-  "contributors": [
-    {
-      "name": "Filipe Fortes"
-    }
-  ],
-  "bugs": {
-    "url": "https://github.com/fortes/enfield/issues"
+    "uslug": "~1.0"
   },
   "devDependencies": {
     "mocha": "~1.16.2",
     "sinon": "~1.7.3"
   },
-  "bin": {
-    "enfield": "./bin/enfield.coffee"
+  "engines": {
+    "node": ">=0.8"
   },
-  "preferGlobal": true,
-  "repository": {
-    "type": "git",
-    "url": "http://github.com/fortes/enfield.git"
-  },
-  "keywords": [
-    "blog",
-    "static",
-    "generator",
-    "jekyll"
-  ],
-  "scripts": {
-    "test": "NODE_ENV=test mocha --recursive --reporter tap --compilers coffee:coffee-script",
-    "test-watch": "NODE_ENV=test mocha --recursive --watch --reporter dot --compilers coffee:coffee-script"
-  },
-  "license": "MIT"
+  "directories": {
+    "test": "test"
+  }
 }
