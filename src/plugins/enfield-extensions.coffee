@@ -110,7 +110,7 @@ module.exports =
       # Collect files and remove original .less source
       lessFiles = []
       for filepath, i in site.static_files
-        continue unless path.extname(filepath) is '.less'
+        continue unless path.extname(filepath) is ".less"
         # Remove from output
         site.static_files[i] = null
         lessFiles.push filepath
@@ -134,12 +134,12 @@ module.exports =
                 log.error "LESS Compilation Error: #{err.message}".red
                 return cb()
 
-              outPath = filepath.replace /\.less$/, ''
+              outPath = filepath.replace /\.less$/, ""
               site.pages.push {
                 published: true
                 url: outPath
                 content: css
-                ext: '.css'
+                ext: ".css"
               }
 
               cb()

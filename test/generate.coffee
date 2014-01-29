@@ -46,8 +46,8 @@ describe "getPermalink", ->
 describe "filterFiles", ->
   it "overwrites pre-existing filters and tags", ->
     config =
-      include: ['.htaccess']
-      exclude: ['README']
+      include: [".htaccess"]
+      exclude: ["README"]
     files = [
       ".htaccess"                      # Included
       "README"                         # Excluded via config

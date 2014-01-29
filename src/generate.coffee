@@ -97,7 +97,7 @@ processResults = ({config, plugins, includes, layouts, posts, pages, files}) ->
       site[key] = value
 
   # Collect tags & categories for posts
-  for type in ['tags', 'categories']
+  for type in ["tags", "categories"]
     for post in posts
       continue unless (config.future or post.published) and post[type]?.length
       for value in post[type]
@@ -177,7 +177,7 @@ writePage = (page, bundle) ->
   { site, config, liquidOptions, compiledLayouts, mergedPlugins, context } = bundle
 
   currentState.page = page
-  outpath = ''
+  outpath = ""
 
   # Ignore unpublished files
   if config.future or page.published
@@ -214,27 +214,27 @@ processConvertedPage = (result, page, config) ->
   newExt = result.ext
 
   # Pretty URLs don't get extensions
-  if config.pretty_urls and newExt is '.html'
+  if config.pretty_urls and newExt is ".html"
     page.url = helpers.stripExtension page.url
   else if newExt isnt ext
     # Update page url with new extension
     page.url = (helpers.stripExtension page.url) + newExt
 
   # Strip out index.html
-  if path.basename(page.url, '.html') is 'index'
+  if path.basename(page.url, ".html") is "index"
     page.url = path.dirname page.url
 
   # Set up correct path / URL
   outpath = path.join config.destination, page.url
   unless path.extname page.url
-    if newExt is '.html'
-      outpath = path.join config.destination, page.url, 'index.html'
+    if newExt is ".html"
+      outpath = path.join config.destination, page.url, "index.html"
 
   outpath
 
 renderLiquidPostContent = (page, context, liquidOptions) ->
-  context.setLocals 'page', page
-  context.setLocals 'paginator', page.paginator or {}
+  context.setLocals "page", page
+  context.setLocals "paginator", page.paginator or {}
 
   render = tinyliquid.compile page.content, liquidOptions
   Q.nfcall(render, context)
@@ -253,7 +253,7 @@ renderPostLayout = (page, compiledLayouts, context) ->
 
   log.verbose "generate", "Applying layout %s to %s", page.layout, page.url
   template = compiledLayouts[page.layout]
-  context.setLocals 'content', page.content
+  context.setLocals "content", page.content
   Q.nfcall(template, context)
     .then(
       -> context.clearBuffer().toString()
@@ -599,7 +599,7 @@ filterFiles = (config, files, mask) ->
   files.forEach (file) ->
     isPost = false
     for dir in file.split "/"
-      continue if dir in ['.', '..']
+      continue if dir in [".", ".."]
 
       # Save out posts
       if dir is "_posts"
