@@ -1,3 +1,8 @@
+[![Build Status](https://travis-ci.org/fortes/enfield.png?branch=master)](https://travis-ci.org/fortes/enfield)
+[![Dependency Status](https://david-dm.org/fortes/enfield.png?theme=shields.io)](https://david-dm.org/fortes/enfield)
+[![devDependency Status](https://david-dm.org/fortes/enfield/dev-status.png?theme=shields.io)](https://david-dm.org/fortes/enfield#info=devDependencies)
+- - -
+
 # Enfield
 
 Jekyll-like static site generator for node.js that aims to be as compatible as possible with [mojombo/jekyll](https://github.com/mojombo/jekyll).
@@ -211,12 +216,6 @@ See `src/plugins/enfield-generators.coffee` for examples.
 * Consider configurable permalinks
 * Post index page for year directories
 * Check for permalink collisions due to same slug and different dates
-
-## Status
-
-[![Build Status](https://travis-ci.org/fortes/enfield.png?branch=master)](https://travis-ci.org/fortes/enfield)
-[![Dependency Status](https://david-dm.org/fortes/enfield.png?theme=shields.io)](https://david-dm.org/fortes/enfield)
-[![devDependency Status](https://david-dm.org/fortes/enfield/dev-status.png?theme=shields.io)](https://david-dm.org/fortes/enfield#info=devDependencies)
 
 ## License
 
