@@ -172,6 +172,10 @@ See `src/plugins/enfield-generators.coffee` for examples.
 
 MIT
 
+## Contributors
+
+[Contributers](https://github.com/fortes/enfield/graphs/contributors)
+
 ## This Project Has a Stupid Name
 
 Richard Enfield is a minor character in [The Strange Case of Dr. Jekyll and Mr. Hyde](http://en.wikipedia.org/wiki/Strange_Case_of_Dr_Jekyll_and_Mr_Hyde).
