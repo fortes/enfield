@@ -9,10 +9,9 @@ marked.setOptions
     pygments.colorize code, lang, "html", (data) ->
       # Strip out the HTML wrapper added around the code
       data = data.replace(
-        # Final \s is for newline
-        /^<div class="highlight"><pre>([\s\S]+)\s<\/pre><\/div>$/img,
+        /^<div class="highlight"><pre>([\s\S]+)<\/pre><\/div>$/img,
         (match, p1, offset, str) -> p1
-      )
+      ).trim()
       callback null, data
 
 module.exports =
