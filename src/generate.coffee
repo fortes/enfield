@@ -184,7 +184,7 @@ writePage = (page, bundle) ->
     ext = path.extname page.path
 
     # Run conversion
-    convertContent(ext, page.content, mergedPlugins.converters)
+    convertContent(ext, page.content, mergedPlugins.converters, config)
       .then (result) ->
         processConvertedPage(result, page, config)
       .then (outputPath) ->
@@ -194,12 +194,17 @@ writePage = (page, bundle) ->
         renderLiquidPostContent(page, context, liquidOptions)
       .then (content) ->
         log.silly "generate", "Rendered page content for %s: %s", page.url, content
-        page.content = context.clearBuffer().toString()
+        page.content = content
         renderPostLayout(page, compiledLayouts, context)
       .then (contents) ->
         # Write file
         log.verbose "generate", "Writing page: %s", outpath
         Q.nfcall(fs.outputFile, outpath, contents)
+  else
+    # Nothing to do
+    deferred = Q.defer()
+    deferred.resolve()
+    deferred
 
 processConvertedPage = (result, page, config) ->
   log.verbose "generate", "Processing %s (%s)", page.title, page.url
@@ -251,7 +256,7 @@ renderPostLayout = (page, compiledLayouts, context) ->
   context.setLocals 'content', page.content
   Q.nfcall(template, context)
     .then(
-      -> context.clearBuffer()
+      -> context.clearBuffer().toString()
       (err) ->
         log.warn "generate", "Tinyliquid template error: %s", err.message
         throw new Error "Liquid error from #{page.url}: #{err.message}"
@@ -272,17 +277,21 @@ writeFile = (filepath, bundle) ->
     .then ->
       Q.nfcall fs.copy, filepath, outpath
 
-convertContent = (ext, content, converters) ->
+convertContent = (ext, content, converters, config) ->
+  log.silly "generate", "convertContent(%s, %s, ...)", ext, content
   for converter in converters
     if converter.matches ext
-      return Q.nfcall(converter.convert, content)
+      return Q.nfcall(converter.convert, content, config)
         .then (converted) ->
+          log.silly "generate", "Converted Content: %s", converted
           return {
             ext: converter.outputExtension ext
             content: converted
           }
 
   # No converter found, leave content unmodified
+  log.silly "generate", "convertContent: No converter found for extension %s",
+    ext
   deferred = Q.defer()
   deferred.resolve { ext, content }
   deferred.promise
@@ -335,13 +344,13 @@ loadIncludes = (config) ->
       log.verbose "generate", "Normalized includes: %j", Object.keys(normalized)
       normalized
 
-convertIncludes = (includes, converters) ->
+convertIncludes = (includes, converters, config) ->
   Q.all Object.keys(includes).map (includeName) ->
-    convertInclude includeName, includes, converters
+    convertInclude includeName, includes, converters, config
 
-convertInclude = (name, includes, converters) ->
+convertInclude = (name, includes, converters, config) ->
   log.silly "generate", "Converting include %s", name
-  convertContent(path.extname(name), includes[name], converters)
+  convertContent(path.extname(name), includes[name], converters, config)
     .then (result) ->
       log.silly "generate", "Converted include %s", name
       includes[name] = result.content

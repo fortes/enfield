@@ -94,7 +94,7 @@ module.exports = {
       "outputExtension": function(ext) {
         return ".html";
       },
-      "convert": function(content, callback) {
+      "convert": function(content, config, callback) {
         // Return converted value via callback(err, content)
         callback(null, content.replace('foo', ''));
       }

@@ -22,5 +22,5 @@ module.exports =
         ext is ".md" or ext is ".markdown"
       outputExtension: (ext) ->
         ".html"
-      convert: (content, callback) ->
+      convert: (content, config, callback) ->
         converted = marked content, {}, callback
