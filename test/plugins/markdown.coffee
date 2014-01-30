@@ -38,10 +38,22 @@ describe "Markdown converter", ->
       .callsArgWithAsync(3, pygmentsOutput)
 
     md = """``` js
-var foo = "bar";
-```"""
+         var foo = "bar";
+         ```"""
 
     converters.markdown.convert md, config, (err, output) ->
+      assert !err, "No error thrown: #{err?.message}"
+      assert.equal output, expected
+      done()
+
+  it "doesn't use pygments if pygments: false", (done) ->
+    md = """``` js
+            var foo = "bar";
+            ```"""
+    expected = """<pre><code class="lang-js">var foo = &quot;bar&quot;;
+                  </code></pre>\n"""
+
+    converters.markdown.convert md, { pygments: false }, (err, output) ->
       assert !err, "No error thrown: #{err?.message}"
       assert.equal output, expected
       done()

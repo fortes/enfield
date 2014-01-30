@@ -5,7 +5,8 @@ marked   = require "marked"
 marked.setOptions
   gfm: true
   smartypants: true
-  highlight: (code, lang, callback) ->
+
+pygmentsHighlight = (code, lang, callback) ->
     pygments.colorize code, lang, "html", (data) ->
       # Strip out the HTML wrapper added around the code
       data = data.replace(
@@ -23,4 +24,8 @@ module.exports =
       outputExtension: (ext) ->
         ".html"
       convert: (content, config, callback) ->
+        if config.pygments
+          marked.setOptions { highlight: pygmentsHighlight }
+        else
+          marked.setOptions { highlight: null }
         converted = marked content, {}, callback
