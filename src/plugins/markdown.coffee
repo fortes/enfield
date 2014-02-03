@@ -7,13 +7,13 @@ marked.setOptions
   smartypants: true
 
 pygmentsHighlight = (code, lang, callback) ->
-    pygments.colorize code, lang, "html", (data) ->
-      # Strip out the HTML wrapper added around the code
-      data = data.replace(
-        /^<div class="highlight"><pre>([\s\S]+)<\/pre><\/div>$/img,
-        (match, p1, offset, str) -> p1
-      ).trim()
-      callback null, data
+  pygments.colorize code, lang, "html", (data) ->
+    # Strip out the HTML wrapper added around the code
+    data = data.replace(
+      /^<div class="highlight"><pre>([\s\S]+)<\/pre><\/div>$/img,
+      (match, p1, offset, str) -> p1
+    ).trim()
+    callback null, data
 
 module.exports =
   converters:
