@@ -174,7 +174,7 @@ MIT
 
 ## Contributors
 
-[Contributers](https://github.com/fortes/enfield/graphs/contributors)
+[Contributors](https://github.com/fortes/enfield/graphs/contributors)
 
 ## This Project Has a Stupid Name
 
