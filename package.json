@@ -3,18 +3,8 @@
   "version": "0.3.1",
   "description": "Jekyll-like blog engine for node.js",
   "author": "Filipe Fortes <filipe@fortes.com>",
-  "contributors": [
-    "Filipe Fortes"
-  ],
-  "homepage": "https://github.com/fortes/enfield",
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/fortes/enfield.git"
-  },
-  "bugs": {
-    "url": "https://github.com/fortes/enfield/issues"
-  },
+  "repository": "fortes/enfield",
   "keywords": [
     "blog",
     "static",
@@ -22,9 +12,9 @@
     "jekyll"
   ],
   "files": [
+    "bin",
     "CHANGELOG.md",
     "LICENSE",
-    "bin",
     "site_template",
     "src"
   ],
