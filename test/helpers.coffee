@@ -1,7 +1,6 @@
 assert = require "assert"
 fs     = require "fs-extra"
 sinon  = require "sinon"
-Q      = require "q"
 
 helpers = require "../src/helpers"
 

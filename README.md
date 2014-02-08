@@ -89,14 +89,14 @@ module.exports = {
     "foo": {
       "priority": 1,
       "matches": function(ext) {
-        return ext === '.foo';
+        return ext === ".foo";
       },
       "outputExtension": function(ext) {
         return ".html";
       },
       "convert": function(content, config, callback) {
         // Return converted value via callback(err, content)
-        callback(null, content.replace('foo', ''));
+        callback(null, content.replace("foo", ""));
       }
     }
   }
@@ -174,7 +174,7 @@ MIT
 
 ## Contributors
 
-[Contributers](https://github.com/fortes/enfield/graphs/contributors)
+[Contributors](https://github.com/fortes/enfield/graphs/contributors)
 
 ## This Project Has a Stupid Name
 

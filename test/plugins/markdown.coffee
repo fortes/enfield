@@ -18,8 +18,8 @@ describe "Markdown converter", ->
     assert !converters.markdown.matches(".mdown"), ".mdown"
 
   it "Outputs .html extension", ->
-    assert.equal converters.markdown.outputExtension('.md'), '.html'
-    assert.equal converters.markdown.outputExtension('.markdown'), '.html'
+    assert.equal converters.markdown.outputExtension(".md"), ".html"
+    assert.equal converters.markdown.outputExtension(".markdown"), ".html"
 
   it "Converts markdown", (done) ->
     converters.markdown.convert "*Hello* **World**", config, (err, output) ->
