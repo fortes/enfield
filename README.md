@@ -14,7 +14,7 @@ Core functionality is identical to Jekyll:
 * Blog aware static site generator
 * Compatible with the Jeykll directory and file structure
 * Use Markdown for posts
-* Code highlighting via Pygments
+* Code highlighting via Pygments or Highlight.js
 * Layouts written using liquid template engine
 * Server / Auto-regenerate
 

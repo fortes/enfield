@@ -1,10 +1,14 @@
-pygments = require "pygments"
+hljs     = require "highlight.js"
 marked   = require "marked"
+pygments = require "pygments"
 
 # Initialize markdown
 marked.setOptions
   gfm: true
   smartypants: true
+
+highlightJsHighlight = (code, lang, callback) ->
+  callback null, hljs.highlight(lang, code).value
 
 pygmentsHighlight = (code, lang, callback) ->
   pygments.colorize code, lang, "html", (data) ->
@@ -27,5 +31,5 @@ module.exports =
         if config.pygments
           marked.setOptions { highlight: pygmentsHighlight }
         else
-          marked.setOptions { highlight: null }
+          marked.setOptions { highlight: highlightJsHighlight }
         converted = marked content, {}, callback

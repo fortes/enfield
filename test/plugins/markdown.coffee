@@ -46,11 +46,13 @@ describe "Markdown converter", ->
       assert.equal output, expected
       done()
 
-  it "doesn't use pygments if pygments: false", (done) ->
+  it "uses highlight.js if pygments: false", (done) ->
     md = """``` js
             var foo = "bar";
             ```"""
-    expected = """<pre><code class="lang-js">var foo = &quot;bar&quot;;
+    expected = """<pre><code class="lang-js">\
+                  <span class="hljs-keyword">var</span> foo = \
+                  <span class="hljs-string">"bar"</span>;
                   </code></pre>\n"""
 
     converters.markdown.convert md, { pygments: false }, (err, output) ->
