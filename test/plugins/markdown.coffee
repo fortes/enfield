@@ -2,7 +2,8 @@ assert   = require "assert"
 pygments = require "pygments"
 sinon    = require "sinon"
 
-{converters} = require "../../src/plugins/markdown"
+plugin = require "../../src/plugins/markdown"
+{converters} = plugin
 config = { pygments: true }
 
 describe "Markdown converter", ->
@@ -22,7 +23,7 @@ describe "Markdown converter", ->
     assert.equal converters.markdown.outputExtension(".markdown"), ".html"
 
   it "Converts markdown", (done) ->
-    converters.markdown.convert "*Hello* **World**", config, (err, output) ->
+    converters.markdown.convert "*Hello* **World**", (err, output) ->
       assert !err, "No error thrown: #{err?.message}"
       assert.equal output, "<p><em>Hello</em> <strong>World</strong></p>\n"
       done()
@@ -41,7 +42,9 @@ describe "Markdown converter", ->
          var foo = "bar";
          ```"""
 
-    converters.markdown.convert md, config, (err, output) ->
+    plugin.setConfig { pygments: true }
+
+    converters.markdown.convert md, (err, output) ->
       assert !err, "No error thrown: #{err?.message}"
       assert.equal output, expected
       done()
@@ -55,7 +58,9 @@ describe "Markdown converter", ->
                   <span class="hljs-string">"bar"</span>;
                   </code></pre>\n"""
 
-    converters.markdown.convert md, { pygments: false }, (err, output) ->
+    plugin.setConfig { pygments: false }
+
+    converters.markdown.convert md, (err, output) ->
       assert !err, "No error thrown: #{err?.message}"
       assert.equal output, expected
       done()

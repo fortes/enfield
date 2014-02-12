@@ -106,6 +106,8 @@ processResults = ({config, plugins, includes, layouts, posts, pages, files}) ->
 
   # Prepare plugins
   mergedPlugins = mergePlugins bundledPlugins, plugins
+  # Update config for all plugins
+  mergedPlugins.setConfig.forEach (setConfig) -> setConfig config
 
   liquidOptions = currentState.liquidOptions =
     customTags: mergedPlugins.tags
@@ -184,7 +186,7 @@ writePage = (page, bundle) ->
     ext = path.extname page.path
 
     # Run conversion
-    convertContent(ext, page.content, mergedPlugins.converters, config)
+    convertContent(ext, page.content, mergedPlugins.converters)
       .then (result) ->
         processConvertedPage(result, page, config)
       .then (outputPath) ->
@@ -277,11 +279,11 @@ writeFile = (filepath, bundle) ->
     .then ->
       Q.nfcall fs.copy, filepath, outpath
 
-convertContent = (ext, content, converters, config) ->
+convertContent = (ext, content, converters) ->
   log.silly "generate", "convertContent(%s, %s, ...)", ext, content
   for converter in converters
     if converter.matches ext
-      return Q.nfcall(converter.convert, content, config)
+      return Q.nfcall(converter.convert, content)
         .then (converted) ->
           log.silly "generate", "Converted Content: %s", converted
           return {
@@ -299,12 +301,14 @@ convertContent = (ext, content, converters, config) ->
 mergePlugins = (a, b) ->
   log.silly "generate", "mergePlugins(%j, %j)", a, b
   merged =
+    setConfig: []
     filters: {}
     tags: {}
     converters: []
     generators: []
 
   for set in [a, b]
+    merged.setConfig = merged.setConfig.concat set.setConfig
     merged.converters = merged.converters.concat set.converters
     merged.generators = merged.generators.concat set.generators
     for name, filter of set.filters
@@ -350,7 +354,7 @@ convertIncludes = (includes, converters, config) ->
 
 convertInclude = (name, includes, converters, config) ->
   log.silly "generate", "Converting include %s", name
-  convertContent(path.extname(name), includes[name], converters, config)
+  convertContent(path.extname(name), includes[name], converters)
     .then (result) ->
       log.silly "generate", "Converted include %s", name
       includes[name] = result.content
@@ -690,6 +694,7 @@ loadPlugins = (dirs) ->
   Q.all(dirs.map (dir) -> Q.nfcall fs.readdir, dir)
     .then (dirListings) ->
       plugins =
+        setConfig: []
         filters: {}
         tags: {}
         converters: []
@@ -719,6 +724,8 @@ loadFileIntoPlugins = (file, plugins) ->
   log.verbose "generate", "Loading plugin: %s", file
   plugin = require file
 
+  if "setConfig" of plugin
+    plugins.setConfig.push plugin.setConfig
   if "filters" of plugin
     for key, filter of plugin["filters"]
       log.silly "generate", "Found filter for %s", key

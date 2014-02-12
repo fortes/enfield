@@ -20,6 +20,11 @@ pygmentsHighlight = (code, lang, callback) ->
     callback null, data
 
 module.exports =
+  setConfig: (config) ->
+    if config.pygments
+      marked.setOptions { highlight: pygmentsHighlight }
+    else
+      marked.setOptions { highlight: highlightJsHighlight }
   converters:
     markdown:
       priority: 2
@@ -27,9 +32,5 @@ module.exports =
         ext is ".md" or ext is ".markdown"
       outputExtension: (ext) ->
         ".html"
-      convert: (content, config, callback) ->
-        if config.pygments
-          marked.setOptions { highlight: pygmentsHighlight }
-        else
-          marked.setOptions { highlight: highlightJsHighlight }
-        converted = marked content, {}, callback
+      convert: (content, callback) ->
+        marked content, {}, callback

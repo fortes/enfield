@@ -78,6 +78,20 @@ The following plugin types are supported:
 * Custom Tags
 * Generators
 
+### Configuration
+
+If present, Enfield will call the `setConfig` function on the plugin in order to pass in an object with all the options set by `_config.yml`
+
+```js
+module.exports = {
+  "setConfig": function (config) {
+    // Do whatever setup is required
+  }
+}
+```
+
+Note that this function can be called more than once.
+
 ### Converters
 
 Custom converters can be added. Note that only items with YAML frontmatter will be converted.
@@ -94,7 +108,7 @@ module.exports = {
       "outputExtension": function(ext) {
         return ".html";
       },
-      "convert": function(content, config, callback) {
+      "convert": function(content, callback) {
         // Return converted value via callback(err, content)
         callback(null, content.replace("foo", ""));
       }

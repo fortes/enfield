@@ -87,12 +87,12 @@ describe "convertContent", ->
     {
       matches: (ext) -> ext is ".md"
       outputExtension: (ext) -> ".html"
-      convert: (content, config, callback) -> callback null, "Converted"
+      convert: (content, callback) -> callback null, "Converted"
     }
   ]
 
   it "calls properly calls converters", (done) ->
-    generate.convertContent(".md", "myContent", converters, config)
+    generate.convertContent(".md", "myContent", converters)
       .nodeify (err, converted) ->
         assert !err, "No error thrown"
         assert.equal converted.ext, ".html", "Extension modified"
@@ -100,7 +100,7 @@ describe "convertContent", ->
         done()
 
   it "leaves content alone if no converter is found", (done) ->
-    generate.convertContent(".bogus", "myContent", converters, config)
+    generate.convertContent(".bogus", "myContent", converters)
       .nodeify (err, converted) ->
         assert !err, "No error thrown"
         assert.equal converted.ext, ".bogus", "Extension unmodified"
