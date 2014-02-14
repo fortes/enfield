@@ -15,8 +15,9 @@ Core functionality is identical to Jekyll:
 * Compatible with the Jeykll directory and file structure
 * Use Markdown for posts
 * Code highlighting via Pygments or Highlight.js
-* Layouts written using liquid template engine
+* Layouts written using Liquid template engine
 * Server / Auto-regenerate
+* Extension-less page URLs (i.e. `/example/` from `/example.html` via `pretty_urls` configuration variable)
 
 There are a few bonus features not present in the default install of Jekyll:
 
@@ -24,7 +25,6 @@ There are a few bonus features not present in the default install of Jekyll:
 * Use markdown within includes
 * Compile and minify CoffeeScript & LESS
 * Support post and page URL aliases via redirects
-* Extension-less page URLs (i.e. `/example/` from `/example.html` via `pretty_urls` configuration variable)
 
 Finally, there are a few missing features:
 
