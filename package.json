@@ -48,11 +48,11 @@
     "toposort": "~0.2",
     "uglify-js": "~2.4",
     "uslug": "~1.0",
-    "highlight.js": "~8.0.0"
+    "highlight.js": "~8.0"
   },
   "devDependencies": {
-    "mocha": "~1.17.1",
-    "sinon": "~1.8.1"
+    "mocha": "~1.17",
+    "sinon": "~1.8"
   },
   "engines": {
     "node": ">=0.8"
