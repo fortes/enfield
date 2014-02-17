@@ -70,7 +70,7 @@ module.exports = exports =
     paginate_path: "page:num"
 
     #markdown: "maruku"
-    markdown_ext: ["markdown", "mkd", "mkdn", "md"]
+    markdown_ext: ["markdown", "mkdown", "mkdn", "mkd", "md"]
     #textile_ext: ["textile"]
 
     excerpt_separator: "\n\n"
