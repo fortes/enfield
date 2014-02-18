@@ -39,7 +39,7 @@
     "marked": "~0.3",
     "moment": "~2.5",
     "node-static": "~0.7",
-    "nopt": "~2.1",
+    "nopt": "~2.2",
     "npmlog": "~0.0",
     "pygments": "~0.2",
     "q": "~1.0",
