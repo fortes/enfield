@@ -12,7 +12,7 @@ Jekyll-like static site generator for node.js that aims to be as compatible as p
 Core functionality is identical to Jekyll:
 
 * Blog aware static site generator
-* Compatible with the Jeykll directory and file structure
+* Compatible with the Jekyll directory and file structure
 * Use Markdown for posts
 * Code highlighting via Pygments or Highlight.js
 * Layouts written using Liquid template engine
@@ -22,7 +22,7 @@ Core functionality is identical to Jekyll:
 There are a few bonus features not present in the default install of Jekyll:
 
 * Jekyll-like plugin model, with CoffeeScript/JS instead of Ruby
-* Use markdown within includes
+* Use Markdown within includes
 * Compile and minify CoffeeScript & LESS
 * Support post and page URL aliases via redirects
 
