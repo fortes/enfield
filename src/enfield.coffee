@@ -29,11 +29,11 @@ knownOptions =
   log: String
 
 shortHands =
-  s: ["--source"]
-  d: ["--destination"]
-  w: ["--watch"]
-  h: ["--help"]
-  v: ["--version"]
+  s: "--source"
+  d: "--destination"
+  w: "--watch"
+  h: "--help"
+  v: "--version"
 
 VERSION = "0.4"
 
