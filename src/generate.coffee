@@ -1,16 +1,17 @@
-async      = require "async"
-fs         = require "fs-extra"
-gaze       = require "gaze"
-glob       = require "glob"
-log        = require "./log"
-path       = require "path"
-time       = require("time")(Date) # Extend global object
-tinyliquid = require "tinyliquid"
-toposort   = require "toposort"
-util       = require "util"
-Q          = require "q"
+async          = require "async"
+{EventEmitter} = require("events")
+fs             = require "fs-extra"
+gaze           = require "gaze"
+glob           = require "glob"
+log            = require "./log"
+path           = require "path"
+time           = require("time")(Date) # Extend global object
+tinyliquid     = require "tinyliquid"
+toposort       = require "toposort"
+util           = require "util"
+Q              = require "q"
 
-helpers    = require "./helpers"
+helpers        = require "./helpers"
 
 # Built-in plugins
 bundledPlugins = null
@@ -21,7 +22,9 @@ currentState = null
 
 INCLUDE_PATH = "_includes"
 
-module.exports = exports = (config) ->
+module.exports = generate = new EventEmitter()
+
+generate.generate = (config) ->
   log.info "generate", "Begin generation"
   # First-run initialization
   postMask = ///^(\d{4})-(\d{2})-(\d{2})-(.+)\.(#{config.markdown_ext.join "|"}|html)$///
@@ -745,7 +748,7 @@ loadFileIntoPlugins = (file, plugins) ->
 
 # Export internal functions when testing
 if process.env.NODE_ENV is "test"
-  exports.filterFiles = filterFiles
-  exports.getPermalink = getPermalink
-  exports.convertContent = convertContent
-  exports.getCategoriesFromPostPath = getCategoriesFromPostPath
+  generate.filterFiles = filterFiles
+  generate.getPermalink = getPermalink
+  generate.convertContent = convertContent
+  generate.getCategoriesFromPostPath = getCategoriesFromPostPath

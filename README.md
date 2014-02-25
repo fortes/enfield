@@ -78,6 +78,15 @@ The following plugin types are supported:
 * Custom Tags
 * Generators
 
+### Events
+
+* Post / Page Read
+* Post / Page Conversion Before / After
+* Post / Page Layout Before / After
+* Post / Page Written Before / After
+* Static File Copy Before / After
+* Config file reloaded
+
 ### Configuration
 
 If present, Enfield will call the `setConfig` function on the plugin in order to pass in an object with all the options set by `_config.yml`

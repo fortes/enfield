@@ -128,7 +128,7 @@ module.exports = exports =
         process.exit -1
 
   build: (config) ->
-    generate(config)
+    generate.generate(config)
       .then ->
         log.info "enfield", "Generation done"
       .fail (err) ->
