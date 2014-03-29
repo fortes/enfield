@@ -35,7 +35,7 @@
     "glob": "~3.2",
     "he": "~0.3",
     "js-yaml": "~3.0",
-    "less": "~1.6",
+    "less": "~1.7",
     "marked": "~0.3",
     "moment": "~2.5",
     "node-static": "~0.7",
@@ -51,8 +51,8 @@
     "highlight.js": "~8.0"
   },
   "devDependencies": {
-    "mocha": "~1.17",
-    "sinon": "~1.8"
+    "mocha": "~1.18",
+    "sinon": "~1.9"
   },
   "engines": {
     "node": ">=0.8"
