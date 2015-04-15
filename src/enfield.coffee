@@ -35,7 +35,7 @@ shortHands =
   h: "--help"
   v: "--version"
 
-VERSION = "0.4"
+VERSION = require('../package.json').version
 
 module.exports = exports =
   main: (argv) ->

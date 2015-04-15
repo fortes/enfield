@@ -2,6 +2,10 @@
 
 ### HEAD
 
+- Nothing yet.
+
+### Version 0.4.0
+
 - Use [highlight.js](http://highlightjs.org/) if `pygments` is set to `false`
 - New `config` parameter for `converter.convert` API
 - Add support for the `date_to_rfc822` filter present in Jekyll
