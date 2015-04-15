@@ -27,32 +27,32 @@
     "test-watch": "NODE_ENV=test mocha --recursive --watch --reporter dot --compilers coffee:coffee-script/register"
   },
   "dependencies": {
-    "async": "~0.2",
-    "coffee-script": "~1.7",
-    "colors": "~0.6",
-    "fs-extra": "~0.8",
+    "async": "~0.9",
+    "coffee-script": "~1.9",
+    "colors": "~1.0",
+    "fs-extra": "~0.18",
     "gaze": "~0.5",
-    "glob": "~3.2",
-    "he": "~0.3",
-    "js-yaml": "~3.0",
-    "less": "~1.7",
+    "glob": "~5.0",
+    "he": "~0.5",
+    "js-yaml": "~3.2",
+    "less": "~2.5",
     "marked": "~0.3",
-    "moment": "~2.5",
+    "moment": "~2.10",
     "node-static": "~0.7",
-    "nopt": "~2.2",
-    "npmlog": "~0.0",
+    "nopt": "~3.0",
+    "npmlog": "~1.2",
     "pygments": "~0.2",
-    "q": "~1.0",
-    "time": "~0.10",
+    "q": "~1.2",
+    "time": "~0.11",
     "tinyliquid": "~0.2",
     "toposort": "~0.2",
     "uglify-js": "~2.4",
     "uslug": "~1.0",
-    "highlight.js": "~8.0"
+    "highlight.js": "~8.5"
   },
   "devDependencies": {
-    "mocha": "~1.20",
-    "sinon": "~1.10"
+    "mocha": "~2.2",
+    "sinon": "~1.14"
   },
   "engines": {
     "node": ">=0.8"
