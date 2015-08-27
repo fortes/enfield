@@ -708,7 +708,7 @@ loadPlugins = (dirs) ->
           ext in [".js",".coffee"] or fs.statSync(f).isDirectory()
 
       log.silly "generate", "Found plugins %j in %j",
-        allFiles.map(path.basename), dirs
+        allFiles.map((file) -> return path.basename file), dirs
 
       for file in allFiles
         loadFileIntoPlugins file, plugins
