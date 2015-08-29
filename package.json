@@ -23,8 +23,8 @@
   },
   "preferGlobal": true,
   "scripts": {
-    "test": "NODE_ENV=test mocha --recursive --reporter tap --compilers coffee:coffee-script/register",
-    "test-watch": "NODE_ENV=test mocha --recursive --watch --reporter dot --compilers coffee:coffee-script/register"
+    "test": "mocha --recursive --reporter tap --compilers coffee:coffee-script/register",
+    "test-watch": "mocha --recursive --watch --reporter dot --compilers coffee:coffee-script/register"
   },
   "dependencies": {
     "async": "~0.9",
