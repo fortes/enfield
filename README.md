@@ -1,3 +1,8 @@
+# Not Maintained
+
+I do not have time to work on this project these days, but the code lives on if others wish to use it. If you're interested in taking over, fix something via Pull Request and I'm happy to hand things over to you if you're interested.
+
+- - -
 [![Build Status](https://travis-ci.org/fortes/enfield.png?branch=master)](https://travis-ci.org/fortes/enfield)
 [![Dependency Status](https://david-dm.org/fortes/enfield.png?theme=shields.io)](https://david-dm.org/fortes/enfield)
 [![devDependency Status](https://david-dm.org/fortes/enfield/dev-status.png?theme=shields.io)](https://david-dm.org/fortes/enfield#info=devDependencies)
