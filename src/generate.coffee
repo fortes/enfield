@@ -4,7 +4,6 @@ gaze       = require "gaze"
 glob       = require "glob"
 log        = require "./log"
 path       = require "path"
-time       = require("time")(Date) # Extend global object
 tinyliquid = require "tinyliquid"
 toposort   = require "toposort"
 util       = require "util"
@@ -25,7 +24,7 @@ module.exports = exports = (config) ->
   log.info "generate", "Begin generation"
   # First-run initialization
   postMask = ///^(\d{4})-(\d{2})-(\d{2})-(.+)\.(#{config.markdown_ext.join "|"}|html)$///
-  time.tzset config.timezone
+  # time.tzset config.timezone
   Q.all([checkDirectories(config), loadBundledPlugins()])
     .then ->
       log.verbose "generate", "Initialization complete"

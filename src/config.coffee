@@ -1,7 +1,6 @@
 fs   = require "fs"
 log  = require "./log"
 path = require "path"
-time = require "time"
 Q    = require "q"
 yaml = require "js-yaml"
 
@@ -109,7 +108,7 @@ resolveOptions = (config) ->
 
   unless config.timezone
     # Use system default
-    config.timezone = time.currentTimezone
+    config.timezone = new Date().getTimezoneOffset()
 
   # Make source, config, and destination paths relative to current directory
   config.source = path.relative process.cwd(), config.source

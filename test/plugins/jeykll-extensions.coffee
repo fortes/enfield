@@ -1,6 +1,5 @@
 assert = require "assert"
 sinon  = require "sinon"
-time   = require "time"
 
 {filters, tags, generators} = require "../../src/plugins/jekyll-extensions"
 
